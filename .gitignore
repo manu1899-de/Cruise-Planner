@@ -1,6 +1,9 @@
 state.json
 log.txt
 search_log.txt
+saved_log.txt
+saved_run.log
+search_run*.log
 *.log
 Cruise Watch.html
 __pycache__/
