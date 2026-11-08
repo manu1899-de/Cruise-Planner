@@ -788,9 +788,9 @@ function wireMultiSelectDropdown(idPrefix,lines,options,onChange){
   const wrap=$(idPrefix+"-wrap"),btn=$(idPrefix+"-btn"),panel=$(idPrefix+"-panel"),allCb=$(idPrefix+"-all");
   $(idPrefix+"-opts").innerHTML=options.map(o=>`<label class="msdd-opt"><input type="checkbox" data-v="${esc(o)}">${esc(o)}</label>`).join("");
   const opts=[...panel.querySelectorAll("[data-v]")];
-  const refresh=()=>{const sel=lines.sel;allCb.checked=sel.length===0;opts.forEach(o=>o.checked=sel.includes(o.dataset.v));
-    btn.textContent=sel.length===0?"Todas":sel.length===1?sel[0]:`${sel.length} navieras`};
-  allCb.onclick=e=>{e.stopPropagation();lines.sel=[];refresh();onChange&&onChange()};
+  const refresh=()=>{const sel=lines.sel;const allSel=sel.length===0||sel.length===opts.length;allCb.checked=allSel;opts.forEach(o=>o.checked=sel.length===0?true:sel.includes(o.dataset.v));
+    btn.textContent=allSel?"Todas":sel.length===1?sel[0]:`${sel.length} navieras`};
+  allCb.onclick=e=>{e.stopPropagation();lines.sel=opts.map(o=>o.dataset.v);refresh();onChange&&onChange()};
   opts.forEach(o=>o.onclick=e=>{e.stopPropagation();let s=opts.filter(x=>x.checked).map(x=>x.dataset.v);
     if(s.length===opts.length)s=[];
     lines.sel=s;refresh();onChange&&onChange()});
