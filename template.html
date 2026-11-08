@@ -124,7 +124,8 @@ tr.detail>td{background:var(--bg);padding:18px;border-left:5px solid var(--lc,#8
 .msdd-sep{border-top:1px solid var(--line);margin:4px 0}
 .dpf-panel{position:absolute;top:calc(100% + 4px);left:0;z-index:40;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px;width:230px;box-shadow:0 10px 28px rgba(0,0,0,.18)}
 .dpf-head{display:flex;justify-content:space-between;align-items:center;font:700 12.5px var(--f-body);color:var(--ink);margin-bottom:6px;text-transform:capitalize}
-.dpf-nav{background:none;border:none;cursor:pointer;font-size:15px;color:var(--ink-2);padding:2px 8px;border-radius:6px}
+.dpf-navgrp{display:flex;gap:1px}
+.dpf-nav{background:none;border:none;cursor:pointer;font-size:14px;color:var(--ink-2);padding:2px 6px;border-radius:6px}
 .dpf-nav:hover{background:var(--bg)}
 .dpf-dow{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:2px}
 .dpf-dow span{font-size:10px;font-weight:700;color:var(--ink-3);text-align:center}
@@ -705,11 +706,11 @@ function wireDateField(id,state,key,onChange,getHintMonth){
     const first=new Date(Date.UTC(view.y,view.m,1)),startDow=(first.getUTCDay()+6)%7,daysInMonth=new Date(Date.UTC(view.y,view.m+1,0)).getUTCDate();
     let cells="";for(let i=0;i<startDow;i++)cells+="<span></span>";
     for(let d=1;d<=daysInMonth;d++){const iso=`${view.y}-${String(view.m+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;cells+=`<button type="button" class="dpf-day${state[key]===iso?" sel":""}" data-iso="${iso}">${d}</button>`}
-    panel.innerHTML=`<div class="dpf-head"><button type="button" class="dpf-nav" data-nav="-1">‹</button><span>${MONTH_ES[view.m]} ${view.y}</span><button type="button" class="dpf-nav" data-nav="1">›</button></div>
+    panel.innerHTML=`<div class="dpf-head"><span class="dpf-navgrp"><button type="button" class="dpf-nav" data-nav="-12" title="Año anterior">«</button><button type="button" class="dpf-nav" data-nav="-1" title="Mes anterior">‹</button></span><span>${MONTH_ES[view.m]} ${view.y}</span><span class="dpf-navgrp"><button type="button" class="dpf-nav" data-nav="1" title="Mes siguiente">›</button><button type="button" class="dpf-nav" data-nav="12" title="Año siguiente">»</button></span></div>
     <div class="dpf-dow">${DOW_ES.map(d=>`<span>${d}</span>`).join("")}</div>
     <div class="dpf-grid">${cells}</div>
     <div class="dpf-foot"><button type="button" class="btn ghost" id="${id}-clear">Limpiar</button><button type="button" class="btn ghost" id="${id}-hoy">Hoy</button></div>`;
-    panel.querySelectorAll("[data-nav]").forEach(b=>b.onclick=e=>{e.stopPropagation();view.m+=+b.dataset.nav;if(view.m<0){view.m=11;view.y--}if(view.m>11){view.m=0;view.y++}renderCalendar()});
+    panel.querySelectorAll("[data-nav]").forEach(b=>b.onclick=e=>{e.stopPropagation();view.m+=+b.dataset.nav;view.y+=Math.floor(view.m/12);view.m=((view.m%12)+12)%12;renderCalendar()});
     panel.querySelectorAll("[data-iso]").forEach(b=>b.onclick=e=>{e.stopPropagation();state[key]=b.dataset.iso;refreshBtn();renderCalendar();onChange&&onChange()});
     $(id+"-clear").onclick=e=>{e.stopPropagation();state[key]="";refreshBtn();renderCalendar();onChange&&onChange()};
     $(id+"-hoy").onclick=e=>{e.stopPropagation();const t=new Date();view={y:t.getFullYear(),m:t.getMonth()};renderCalendar()}};
