@@ -1,0 +1,1315 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CRUISE - PLANNER</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Public+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: harbour departure board — navy masthead, coloured line stripes, expandable voyage cards */
+:root{
+  --bg:#EEF3F6;--panel:#FFFFFF;--ink:#0E1C26;--ink-2:#46596A;--ink-3:#7D8E9B;
+  --line:#D8E2E8;--line-2:#B9C8D2;
+  --navy:#0B2545;--navy-2:#13315C;--sea:#0A8F9E;--sea-soft:#D5F1F3;--sea-ink:#056470;
+  --coral:#E8553E;--coral-soft:#FDE3DD;--sun:#F2A900;--sun-soft:#FFF1CC;--sun-ink:#8A5A00;
+  --green:#178A4C;--green-soft:#D9F2E3;--red:#C62F2F;--red-soft:#FBE0E0;--violet:#6B4FBB;--violet-soft:#ECE6FB;
+  --sky-soft:#E3EEFB;--sky-ink:#244C8F;
+  --f-display:"Bricolage Grotesque",ui-sans-serif,system-ui,sans-serif;
+  --f-body:"Public Sans",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#08131B;--panel:#0F1E28;--ink:#E3ECF1;--ink-2:#A8BAC6;--ink-3:#7A8C98;--line:#1E313D;--line-2:#2F4552;
+  --navy:#0A1B30;--navy-2:#13294A;--sea:#3CC3D1;--sea-soft:#0F3439;--sea-ink:#9AE3EA;
+  --coral:#FF7A63;--coral-soft:#3A1C17;--sun:#FFC23D;--sun-soft:#3A2D0C;--sun-ink:#FFD57A;
+  --green:#5FD08F;--green-soft:#123222;--red:#FF7B7B;--red-soft:#3A1717;--violet:#A993F0;--violet-soft:#241C3D;
+  --sky-soft:#152740;--sky-ink:#A9C4F0;color-scheme:dark}}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:15px/1.55 var(--f-body)}
+a{color:var(--sea-ink)}
+.mast{background:linear-gradient(120deg,#10231F,#163832,#1B4A42);color:#fff;padding:22px max(16px,env(safe-area-inset-left,0px)) 18px}
+.mast-in{max-width:1280px;margin:0 auto;display:flex;flex-wrap:wrap;gap:14px;align-items:flex-start;justify-content:space-between}
+.mast h1{font:800 34px/1 var(--f-display);margin:0;letter-spacing:-.01em}
+.mast h1 span{color:#FFB020}
+.mast-right{display:flex;align-items:center;gap:10px}
+.icobtn{border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.08);color:#fff;width:32px;height:32px;border-radius:999px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center}
+.cur{display:flex;align-items:center;gap:6px;background:rgba(0,0,0,.25);border-radius:999px;padding:4px}
+.cur button{border:0;background:none;color:#C7D6E6;font:600 13px var(--f-body);padding:6px 14px;border-radius:999px;cursor:pointer}
+.cur button[aria-pressed="true"]{background:#FFB020;color:#1C1300}
+.stealth-btn{position:fixed;top:14px;right:14px;z-index:999;width:38px;height:38px;border-radius:50%;border:1px solid var(--line-2);background:var(--panel);color:var(--ink);font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 10px rgba(0,0,0,.18)}
+html.stealth{filter:grayscale(1) contrast(1.05)}
+html.stealth .mast{display:none}
+html.stealth .stealth-btn{background:#fff;color:#000;border-color:#000}
+html.stealth .flagimg,html.stealth .llogo,html.stealth .itin-photo,html.stealth .gphoto-imgwrap img,html.stealth .photoslot.filled img,html.stealth .mcphotos-stack img,html.stealth .galitem img,html.stealth .dayphoto-thumb img,html.stealth #modal img{display:none}
+.wrap{max-width:1280px;margin:0 auto;padding:18px max(16px,env(safe-area-inset-right,0px)) 48px max(16px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:16px}
+.topnav{display:flex;gap:10px}
+.topnav button{flex:0 0 auto;border:0;background:var(--panel);color:var(--ink-2);font:800 15px var(--f-display);padding:12px 20px;border-radius:12px 12px 0 0;cursor:pointer;border:1px solid var(--line);border-bottom:3px solid transparent}
+.topnav button[aria-selected="true"]{color:var(--navy);border-bottom-color:var(--coral);background:var(--panel)}
+@media (prefers-color-scheme:dark){.topnav button[aria-selected="true"]{color:#fff}}
+.menu{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px}
+.mi{flex:0 0 auto;border:1px solid var(--line-2);background:var(--panel);color:var(--ink);font:600 14px var(--f-body);padding:8px 14px;border-radius:999px;cursor:pointer;display:flex;gap:8px;align-items:center}
+.mi .n{font:500 12px var(--f-mono);background:var(--bg);border-radius:999px;padding:1px 8px}
+.mi[aria-selected="true"]{color:#fff;border-color:transparent;background:var(--navy)}
+.mi[aria-selected="true"] .n{background:rgba(255,255,255,.22);color:inherit}
+.filters{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px}
+.fld{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--ink-2);font-weight:600}
+input,select,textarea{font:14px var(--f-body);color:var(--ink);background:var(--bg);border:1px solid var(--line-2);border-radius:8px;padding:7px 9px}
+input[type=number]{width:92px;font-family:var(--f-mono)}
+.grow{flex:1 1 200px}.grow input{width:100%}
+.check{flex-direction:row;align-items:center;gap:6px;color:var(--ink);padding-bottom:8px}
+.btn{font:600 13px var(--f-body);border:1px solid var(--line-2);background:var(--panel);color:var(--ink);border-radius:8px;padding:7px 12px;cursor:pointer;text-decoration:none;display:inline-flex;gap:6px;align-items:center}
+.btn.book{background:var(--coral);border-color:var(--coral);color:#fff}
+.btn.primary{background:var(--sea);border-color:var(--sea);color:#fff}
+.btn.danger{background:none;border-color:var(--red);color:var(--red)}
+.btn.ghost{border-color:transparent;background:none;color:var(--ink-2)}
+.btn[disabled]{opacity:.45;cursor:default}
+:focus-visible{outline:2px solid var(--sea);outline-offset:2px}
+.tbl-wrap{overflow-x:auto;background:var(--panel);border:1px solid var(--line);border-radius:12px}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+th{font:700 11px var(--f-body);text-transform:uppercase;letter-spacing:.07em;color:var(--ink-2);text-align:left;padding:10px;border-bottom:2px solid var(--line-2);white-space:nowrap;background:var(--panel)}
+th button{all:unset;cursor:pointer}th button:hover{color:var(--ink)}
+th.r,td.r{text-align:right}
+td{padding:10px;border-bottom:1px solid var(--line);vertical-align:top}
+tr.row td:first-child{border-left:5px solid var(--lc,#888)}
+tr.row:hover td{background:color-mix(in srgb,var(--sea-soft) 40%,transparent)}
+tr.row{cursor:pointer}
+tr.row .flagbtn,tr.row a.book{cursor:pointer}
+.rowtitle{font:800 15px var(--f-display);color:var(--ink);margin-bottom:2px}
+.rowwrap{display:flex;align-items:flex-start;gap:12px}
+.llogo-lg{width:42px;height:42px;border-radius:8px;object-fit:contain;background:#fff;border:1px solid var(--line);flex:0 0 auto;padding:3px;margin-top:2px}
+.rowtext{min-width:0;flex:1}
+.ctrysum{display:flex;gap:4px;margin:4px 0;flex-wrap:wrap}
+.ctrysum .flagimg{width:18px;height:13px}
+.lb{display:inline-flex;align-items:center;justify-content:center;min-width:38px;height:22px;padding:0 6px;border-radius:6px;font:800 11px var(--f-display);letter-spacing:.04em;color:#fff;background:var(--lc,#666);margin-right:6px;vertical-align:1px}
+.ship{font:700 15px var(--f-display)}
+.sub{font-size:12px;color:var(--ink-2)}
+.ctry{font-size:11.5px;color:var(--ink-3);margin-top:2px}
+.pill{display:inline-block;font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;margin:4px 4px 0 0;white-space:nowrap}
+.p-new{background:var(--sea-soft);color:var(--sea-ink)}.p-below{background:var(--violet-soft);color:var(--violet)}
+.p-sup{background:var(--coral-soft);color:var(--coral)}.p-dst{background:var(--sky-soft);color:var(--sky-ink)}
+.p-flag{background:var(--sun-soft);color:var(--sun-ink)}.p-warn{background:var(--sun-soft);color:var(--sun-ink)}.p-base{background:var(--bg);color:var(--ink-3)}
+.p-cat{background:var(--violet-soft);color:var(--violet)}
+.dt{display:flex;flex-direction:column;gap:2px;white-space:nowrap}
+.wd{display:inline-block;font:600 11px var(--f-mono);padding:1px 6px;border-radius:5px;background:var(--bg);color:var(--ink-2);margin-right:4px}
+.wd.we{background:var(--sun-soft);color:var(--sun-ink)}
+.wd.hol{background:var(--red-soft);color:var(--red)}
+.num{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.price{font:700 15px var(--f-mono);white-space:nowrap;color:var(--ink)}
+.down{color:var(--green)}.up{color:var(--red)}
+.flagbtn{border:0;background:none;cursor:pointer;font-size:18px;color:var(--ink-3);padding:0 2px}
+.flagbtn[aria-pressed="true"]{color:var(--sun)}
+.exp{border:1px solid var(--line-2);background:var(--panel);color:var(--ink);border-radius:8px;width:30px;height:30px;cursor:pointer}
+tr.detail>td{background:var(--bg);padding:18px;border-left:5px solid var(--lc,#888)}
+.dgrid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1.1fr) minmax(0,.9fr);gap:22px}
+@media (max-width:980px){.dgrid{grid-template-columns:1fr}}
+.dgrid h3{font:700 12px var(--f-body);text-transform:uppercase;letter-spacing:.08em;color:var(--ink-2);margin:0 0 10px}
+.map{border-radius:10px;overflow:hidden;border:1px solid var(--line);background:var(--panel)}
+.map img{display:block;width:100%;height:auto}
+.map .cap{font-size:11px;color:var(--ink-3);padding:4px 8px}
+.rmap{display:block;width:100%;height:220px;background:var(--sea-soft)}
+.rmap .land{fill:var(--line-2);stroke:var(--line);stroke-width:1}
+.rmap .route{fill:none;stroke:var(--coral);stroke-width:2.6;stroke-dasharray:1 5;stroke-linecap:round}
+.rmap .pmlbl{font:600 9.5px var(--f-body);fill:var(--ink-2);paint-order:stroke;stroke:var(--panel);stroke-width:3px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.chip{font-size:12px;font-weight:600;padding:3px 10px;border-radius:999px;background:var(--sky-soft);color:var(--sky-ink);display:inline-flex;align-items:center;gap:6px}
+.chip button{all:unset;cursor:pointer;color:inherit;font-weight:800}
+.days{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px}
+.days li{display:grid;grid-template-columns:44px 132px 1fr;gap:8px;align-items:baseline;padding:6px 10px;border-radius:8px;background:var(--panel);font-size:13px;border:1px solid var(--line)}
+.days li.we{border-color:var(--sun);background:var(--sun-soft)}
+.days li.hol{border-color:var(--red);background:var(--red-soft)}
+.llogo{width:22px;height:22px;border-radius:5px;object-fit:contain;background:#fff;border:1px solid var(--line);flex:0 0 auto;padding:1px}
+.sub .llogo{width:16px;height:16px;vertical-align:-3px;margin-right:4px}
+.shiphead{display:flex;align-items:center;gap:8px}
+.shiphead .ship{font:700 14px var(--f-body)}
+.ctrygrp{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.ctrygrp .g{display:flex;gap:8px;align-items:baseline}
+.ctrygrp .flagc{font-size:16px;display:inline-flex}
+.flagimg{width:20px;height:15px;object-fit:cover;border-radius:2px;vertical-align:-2px;box-shadow:0 0 0 1px rgba(0,0,0,.15) inset}
+.ctrygrp .cname{font-weight:700;font-size:13px}
+.ctrygrp .clist{font-size:12.5px;color:var(--ink-2)}
+.bizdays{font:600 12px var(--f-body);color:var(--sea-ink);background:var(--sea-soft);border-radius:999px;padding:3px 10px;display:inline-block;margin-left:8px}
+.days .dn{font:800 13px var(--f-display);color:var(--sea-ink)}
+.days .line1{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.days .flagr{margin-left:auto;padding-left:8px;display:flex;align-items:center;gap:6px}
+.days .t{font-size:11.5px;color:var(--ink-3);display:block}
+.badge-port{font:600 10.5px var(--f-body);background:var(--green-soft);color:var(--green);border-radius:999px;padding:1px 7px}
+.badge-star{font:600 10.5px var(--f-mono);background:var(--sun-soft);color:var(--sun-ink);border-radius:999px;padding:1px 7px}
+.shiprating{font-size:12px;color:var(--sun-ink);font-weight:700;white-space:nowrap}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:5px 12px;font-size:13px;margin:0}.kv dt{color:var(--ink-2)}.kv dd{margin:0}
+.hist{width:100%;font-size:12.5px;margin-top:6px}.hist td,.hist th{padding:5px 6px;white-space:nowrap}
+.note{font-size:12px;color:var(--ink-2);margin:8px 0 0}
+.empty{padding:34px;text-align:center;color:var(--ink-2)}
+.section{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:12px;border-top:4px solid var(--lc,var(--sea))}
+.section h2{font:800 18px var(--f-display);margin:0;color:var(--lc,var(--ink));display:flex;align-items:center;gap:8px}
+.hero{background:linear-gradient(135deg,var(--navy) 0%,var(--navy-2) 55%,var(--sea-ink) 130%);border-radius:16px;padding:20px;color:#fff;position:relative;overflow:hidden}
+.hero::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 85% -10%,rgba(242,169,0,.25),transparent 55%);pointer-events:none}
+.hero .statgrid{position:relative}
+.banner{font-size:13px;padding:10px 12px;border-radius:10px;background:var(--sun-soft);color:var(--sun-ink)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--ink-2);align-items:center}
+.foot{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;font-size:12.5px;color:var(--ink-2)}
+/* ---- new structure: top nav / sub nav / categories / mis cruceros / modal / stars / dashboard ---- */
+.subbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+.catgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+.catcard{background:var(--panel);border:1px solid var(--line);border-left:5px solid var(--lc,var(--violet));border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:8px;transition:transform .15s ease,box-shadow .15s ease}
+.catcard:hover{transform:translateY(-2px);box-shadow:0 8px 20px -10px rgba(10,20,40,.25)}
+.catcard h3{margin:0;font:800 17px var(--f-display);display:flex;align-items:center;gap:8px}
+.catcard .flags{font-size:16px;letter-spacing:1px}
+.catcard .cnt{font:700 12px var(--f-mono);color:var(--lc,var(--sea-ink));background:color-mix(in srgb,var(--lc,var(--sea)) 16%,transparent);border-radius:999px;padding:2px 9px;display:inline-block;align-self:flex-start}
+.catcard .desc{font-size:12.5px;color:var(--ink-2);flex:1}
+.catcard .acts{display:flex;gap:6px;flex-wrap:wrap}
+.modal-back{position:fixed;inset:0;background:rgba(10,20,28,.55);display:flex;align-items:center;justify-content:center;padding:18px;z-index:50}
+.modal-back[hidden]{display:none}
+[hidden]{display:none!important}
+.modal{background:var(--panel);border-radius:14px;max-width:700px;width:100%;max-height:95vh;overflow:auto;padding:22px;display:flex;flex-direction:column;gap:14px}
+.modal>*{flex-shrink:0}
+.modal h2{margin:0;font:800 20px var(--f-display)}
+.frow{display:flex;flex-wrap:wrap;gap:10px;flex-shrink:0}
+.frow .fld{flex:1 1 180px}
+.frow .fld input,.frow .fld select{width:100%}
+.modal .acts{display:flex;justify-content:flex-end;gap:8px;margin-top:4px}
+.stars{display:inline-flex;gap:2px}
+.stars button{all:unset;cursor:pointer;font-size:19px;color:var(--line-2);line-height:1}
+.stars button.on{color:var(--sun)}
+.stars.ro button{cursor:default}
+.ratebox{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px solid var(--line)}
+.ratebox:last-child{border-bottom:0}
+.statgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+.statcard{background:var(--panel);border:1px solid var(--line);border-top:4px solid var(--lc,var(--sea));border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:4px}
+.statcard .v{font:800 30px var(--f-display);color:var(--lc,var(--navy))}
+@media (prefers-color-scheme:dark){.statcard .v{color:var(--lc,#fff)}}
+.statcard .l{font-size:12px;color:var(--ink-2);font-weight:600}
+.statcard.hero-card{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.22);border-top:4px solid var(--lc,var(--sun))}
+.statcard.hero-card .v{color:#fff}
+.statcard.hero-card .l{color:rgba(255,255,255,.78)}
+.barlist{display:flex;flex-direction:column;gap:7px}
+.barrow{display:grid;grid-template-columns:150px 1fr auto;gap:8px;align-items:center;font-size:12.5px}
+.barrow .track{height:9px;border-radius:999px;background:var(--bg);overflow:hidden}
+.barrow .fill{height:100%;background:linear-gradient(90deg,var(--lc,var(--sea)),color-mix(in srgb,var(--lc,var(--sea)) 60%,#fff 20%))}
+.mccard{background:var(--panel);border:1px solid var(--line);border-left:5px solid var(--lc,#888);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:8px;transition:box-shadow .15s ease}
+.mccard:hover{box-shadow:0 6px 18px -10px rgba(10,20,40,.3)}
+.mccard .top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.mccard h3{margin:0;font:800 17px var(--f-display)}
+.mcroute{font-size:12.5px;color:var(--ink-2)}
+.portchip{font-size:11.5px;background:var(--bg);border-radius:999px;padding:3px 10px;color:var(--ink-2);display:inline-flex;align-items:center;gap:4px}
+.ratesumm{display:flex;flex-wrap:wrap;gap:10px;font-size:12px;color:var(--ink-2)}
+.mc-score{display:flex;align-items:center;gap:10px;background:var(--sun-soft);border-radius:10px;padding:8px 12px;align-self:flex-start}
+.mc-score .stars.ro button{font-size:20px}
+.mc-score .num{font:800 20px var(--f-display);color:var(--sun-ink)}
+.mcbreak{margin-top:4px;padding-top:10px;border-top:1px dashed var(--line-2);display:flex;flex-direction:column;gap:2px}
+.mcprice{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.dayrow.sea{display:flex;align-items:center;padding:5px 0;border-bottom:1px solid var(--line);color:var(--ink-2);font-size:12.5px}
+.dayrow.sea span{display:flex;align-items:center;gap:6px}
+.daylist{flex-shrink:0;max-height:min(70vh,760px);overflow:auto;border:1px solid var(--line);border-radius:10px;padding:4px 12px;background:var(--bg)}
+.dayblock{border-bottom:1px solid var(--line)}
+.dayblock:last-child{border-bottom:none}
+.dayedit{display:flex;align-items:center;gap:10px;padding:6px 0}
+.dayedit .dlabel{flex:0 0 108px;font-size:12.5px;color:var(--ink-2);display:flex;flex-direction:column;line-height:1.3}
+.dayedit .dlabel small{text-transform:uppercase;letter-spacing:.04em;opacity:.75}
+.dport-btn{flex:1;border:1px solid var(--line);border-radius:8px;padding:8px 12px;font:600 13.5px var(--f-body);background:var(--panel);color:var(--ink);text-align:left;cursor:pointer;transition:border-color .15s ease}
+.dport-btn:hover{border-color:var(--lc,var(--sea))}
+.dport-btn.open{border-color:var(--lc,var(--sea));box-shadow:0 0 0 2px color-mix(in srgb,var(--lc,var(--sea)) 25%,transparent)}
+.dport-btn .sub{font-weight:500;font-style:italic;color:var(--ink-2)}
+.daypicker{margin:0 0 10px;padding:12px;border:1px dashed var(--line-2);border-radius:10px;background:var(--panel);display:flex;flex-direction:column;gap:10px}
+.dp-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.dp-crumb{font:700 13px var(--f-body)}
+.dp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;max-height:260px;overflow:auto}
+.dp-chip{border:1px solid var(--line);border-radius:8px;padding:8px 10px;font:600 12.5px var(--f-body);background:var(--bg);color:var(--ink);cursor:pointer;text-align:left;display:flex;align-items:center;gap:6px;transition:border-color .15s ease,background .15s ease}
+.dp-chip:hover{border-color:var(--lc,var(--sea));background:var(--panel)}
+.dp-chip.dp-clear{background:var(--bg);font-style:italic;color:var(--ink-2)}
+.dp-chip.dp-back{flex:0 0 auto;background:var(--bg)}
+.dp-row .dp-manual{flex:1 1 200px;border:1px solid var(--line);border-radius:8px;padding:7px 10px;font:500 13px var(--f-body);background:var(--bg);color:var(--ink)}
+.photogrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;align-items:start}
+.photoslot.add{aspect-ratio:1/1;border:2px dashed var(--line-2);background:var(--bg);color:var(--ink-2);font:600 12.5px var(--f-body);cursor:pointer;display:flex;align-items:center;justify-content:center;text-align:center;padding:8px;border-radius:10px}
+.photoslot.add:hover{border-color:var(--sea);color:var(--sea)}
+.gphoto{display:flex;flex-direction:column;gap:5px}
+.gphoto-imgwrap{position:relative;aspect-ratio:1/1;border-radius:10px;overflow:hidden}
+.gphoto-imgwrap img{width:100%;height:100%;object-fit:cover;display:block}
+.gphoto-imgwrap .photo-rm{position:absolute;top:4px;right:4px;background:rgba(10,20,28,.65);color:#fff;border:0;border-radius:999px;width:22px;height:22px;font-size:12px;cursor:pointer;line-height:1}
+.gphoto-comment{width:100%;border:1px solid var(--line);border-radius:8px;padding:5px 8px;font:500 11.5px var(--f-body);background:var(--bg);color:var(--ink)}
+.mcpeople{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.dayphoto-add{flex:0 0 auto;flex-shrink:0;width:36px;height:36px;border:1px dashed var(--line-2);border-radius:8px;background:var(--bg);color:var(--ink-2);font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.dayphoto-add:hover{border-color:var(--sea);color:var(--sea)}
+.dayphoto-thumb{flex:0 0 auto;flex-shrink:0;position:relative;width:36px;height:36px;border-radius:8px;overflow:hidden;border:1px solid var(--line);cursor:pointer;padding:0}
+.dayphoto-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.dayphoto-thumb .dayphoto-rm{position:absolute;top:0;right:0;background:rgba(10,20,28,.7);color:#fff;border:0;border-radius:0 0 0 6px;width:14px;height:14px;font-size:9px;line-height:14px;cursor:pointer}
+.dayphoto-mini{width:26px;height:26px;object-fit:cover;border-radius:6px;cursor:pointer;vertical-align:-8px;margin-left:6px;border:1px solid var(--line)}
+.dayphoto-comment-row{padding:0 0 6px 118px}
+.dayphoto-comment-row .dayphoto-comment{width:100%;max-width:360px;border:1px solid var(--line);border-radius:8px;padding:6px 9px;font:500 12.5px var(--f-body);background:var(--bg);color:var(--ink)}
+.dayphoto-comment-view{padding:0 0 6px 118px;font:500 12px var(--f-body);color:var(--ink-2);font-style:italic}
+.mcphotos-collapsed{display:flex;align-items:center;gap:10px;margin-top:8px}
+.mcphotos-stack{display:flex}
+.mcphotos-stack img{width:38px;height:38px;object-fit:cover;border-radius:8px;border:2px solid var(--panel);margin-left:-12px;box-shadow:0 1px 3px rgba(0,0,0,.18)}
+.mcphotos-stack img:first-child{margin-left:0}
+.gallerygrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px;max-height:62vh;overflow:auto;margin-top:4px}
+.galitem{display:flex;flex-direction:column;gap:4px}
+.galitem img{width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:10px;cursor:pointer;border:1px solid var(--line)}
+.gcap{font:600 11px var(--f-body);color:var(--ink-2);text-align:center}
+.gcap-comment{font:500 10.5px var(--f-body);color:var(--ink-2);text-align:center;font-style:italic}
+.lb-caption{text-align:center;font:600 13px var(--f-body);color:var(--ink-2);margin-top:8px}
+.itin-timeline{display:flex;flex-direction:column}
+.itin-day{display:flex;gap:14px;position:relative}
+.itin-rail{width:30px;flex:0 0 30px;display:flex;justify-content:center;position:relative}
+.itin-rail::before{content:"";position:absolute;top:0;bottom:0;left:50%;width:2px;background:linear-gradient(var(--line),var(--line));transform:translateX(-50%)}
+.itin-day:first-child .itin-rail::before{top:15px}
+.itin-day:last-child .itin-rail::before{bottom:calc(100% - 15px)}
+.itin-dot{position:relative;z-index:1;width:30px;height:30px;border-radius:50%;background:var(--panel);border:2px solid var(--lc,var(--sea));display:flex;align-items:center;justify-content:center;font-size:13px;box-shadow:0 0 0 4px var(--panel);overflow:hidden}
+.itin-dot .flagimg{width:100%;height:100%;object-fit:cover;border-radius:50%}
+.itin-dot.sea{border-style:dashed;border-color:var(--line-2);background:var(--bg);opacity:.8;font-size:12px}
+.itin-card{flex:1;padding:2px 0 22px;min-width:0}
+.itin-day:last-child .itin-card{padding-bottom:2px}
+.itin-day.sea .itin-card{padding:2px 0 14px;opacity:.75}
+.itin-card-top{display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:4px 10px;padding-top:3px}
+.itin-port{font:700 14.5px var(--f-body);color:var(--ink)}
+.itin-day.sea .itin-port{font-weight:600;font-style:italic;color:var(--ink-2);font-size:13px}
+.itin-date{font:600 10.5px var(--f-body);color:var(--ink-2);text-transform:uppercase;letter-spacing:.05em;white-space:nowrap}
+.itin-stars{margin-top:5px}
+.itin-photo-row{margin-top:9px;display:flex;align-items:center;gap:10px}
+.itin-photo{width:52px;height:52px;object-fit:cover;border-radius:10px;cursor:pointer;border:1px solid var(--line);box-shadow:0 2px 6px rgba(0,0,0,.12)}
+.itin-comment{font:500 12.5px var(--f-body);color:var(--ink-2);font-style:italic}
+.loyladder{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.loytier{flex:1 1 110px;border:1px solid var(--line);border-radius:10px;padding:8px 10px;text-align:center;opacity:.4;background:var(--bg);transition:opacity .15s ease}
+.loytier.reached{opacity:1}
+.loytier.active{border-color:var(--lc,var(--violet));box-shadow:0 0 0 2px color-mix(in srgb,var(--lc,var(--violet)) 30%,transparent);background:var(--panel)}
+.loytier .ln{display:block;font:700 12.5px var(--f-body)}
+.loytier .lp{display:block;font:600 11px var(--f-mono);color:var(--ink-2);margin-top:2px}
+/* ---- timeline ---- */
+.timeline{position:relative;margin:4px 0 0 12px;padding-left:26px;border-left:3px solid var(--line-2);display:flex;flex-direction:column;gap:18px}
+.tl-item{position:relative}
+.tl-dot{position:absolute;left:-33.5px;top:3px;width:16px;height:16px;border-radius:50%;background:var(--lc,var(--sea));box-shadow:0 0 0 4px var(--panel),0 0 0 5px var(--lc,var(--sea))}
+.tl-date{font:700 11.5px var(--f-mono);color:var(--ink-2);margin-bottom:4px}
+.tl-card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.tl-card.future{border-style:dashed;background:var(--sky-soft)}
+.tl-today{position:relative;margin:-4px 0;padding:4px 0}
+.tl-today span{font:800 11px var(--f-body);text-transform:uppercase;letter-spacing:.08em;color:#fff;background:var(--coral);border-radius:999px;padding:4px 12px;position:relative;left:-38.5px}
+/* ---- resumen: compact horizontal timeline ---- */
+.timeline-h{display:flex;gap:10px;overflow-x:auto;overflow-y:hidden;padding:2px 2px 10px;scroll-snap-type:x proximity}
+.timeline-h::-webkit-scrollbar{height:6px}
+.timeline-h::-webkit-scrollbar-thumb{background:var(--line-2);border-radius:999px}
+.tlh-card{flex:0 0 164px;scroll-snap-align:start;background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--lc,var(--sea));border-radius:10px;padding:9px 10px;display:flex;flex-direction:column;gap:3px}
+.tlh-card.future{border-style:dashed;background:var(--sky-soft)}
+.tlh-date{font:700 10.5px var(--f-mono);color:var(--ink-2)}
+.tlh-ship{font:700 12.5px var(--f-body);display:flex;align-items:center;gap:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tlh-ship img{height:14px;flex:0 0 auto}
+.tlh-route{font-size:11px;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tlh-today{flex:0 0 auto;display:flex;align-items:center}
+.tlh-today span{font:800 10px var(--f-body);text-transform:uppercase;letter-spacing:.07em;color:#fff;background:var(--coral);border-radius:999px;padding:5px 10px;white-space:nowrap}
+/* ---- resumen: hero photo mosaic ---- */
+.hero-photos{position:absolute;inset:0;display:grid;grid-auto-flow:column;grid-auto-columns:1fr}
+.hero-photos img{width:100%;height:100%;object-fit:cover;filter:saturate(1.05) brightness(.85)}
+.hero-overlay{position:absolute;inset:0;background:linear-gradient(135deg,color-mix(in srgb,var(--navy) 90%,transparent) 0%,color-mix(in srgb,var(--navy-2) 88%,transparent) 55%,color-mix(in srgb,var(--sea-ink) 82%,transparent) 130%)}
+.hero .statgrid{position:relative;z-index:1}
+/* ---- resumen: donut charts ---- */
+.donut-wrap{display:flex;gap:18px;align-items:center;flex-wrap:wrap}
+.donut{width:142px;height:142px;border-radius:50%;flex:0 0 auto;position:relative;box-shadow:0 0 0 1px var(--line) inset}
+.donut::after{content:"";position:absolute;inset:19%;border-radius:50%;background:var(--panel)}
+.donut-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:1}
+.donut-center span{font:800 24px var(--f-display);color:var(--ink)}
+.donut-center small{font:700 9.5px var(--f-body);color:var(--ink-2);text-transform:uppercase;letter-spacing:.05em}
+.legend{display:flex;flex-direction:column;gap:6px;flex:1 1 180px;min-width:160px}
+.legend-item{display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--ink)}
+.legend-item img.llogo{height:13px}
+.legend-dot{width:10px;height:10px;border-radius:50%;flex:0 0 auto}
+.legend-item b{margin-left:auto;font:700 12px var(--f-mono);color:var(--ink-2)}
+/* ---- resumen: radar chart ---- */
+.radar-wrap{display:flex;justify-content:center}
+.radar{width:100%;max-width:300px}
+.radar-lbl{font:700 10.5px var(--f-body);fill:var(--ink-2)}
+.radar-val{font:800 11px var(--f-mono)}
+/* ---- resumen: port tag cloud ---- */
+.cloud{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.cloud-chip{display:inline-flex;align-items:center;gap:5px;background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-weight:800;color:var(--ink)}
+.cloud-chip b{color:var(--ink-2);font-weight:700;font-size:10px;margin-left:2px}
+/* ---- resumen: ship cards ---- */
+.shipgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.shipcard{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden;border-top:3px solid var(--lc,var(--violet))}
+.shipcard-ph{height:78px;background-size:cover;background-position:center}
+.shipcard-ph-fallback{display:flex;align-items:center;justify-content:center;background:var(--bg);font-size:26px}
+.shipcard-ph-fallback img{height:28px}
+.shipcard-body{padding:8px 10px}
+.shipcard-body b{font-size:12.5px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* ---- resumen: photo highlights grid ---- */
+.photogrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:8px}
+.photocell{position:relative;border-radius:10px;overflow:hidden;aspect-ratio:1;cursor:pointer}
+.photocell img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .2s ease}
+.photocell:hover img{transform:scale(1.07)}
+.photocap{position:absolute;left:0;right:0;bottom:0;padding:5px 7px 4px;font:700 10px var(--f-body);color:#fff;background:linear-gradient(180deg,transparent,rgba(0,0,0,.78));white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.resumen-grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:760px){.resumen-grid2{grid-template-columns:1fr}}
+@media (max-width:640px){.mast h1{font-size:26px}.hide-sm{display:none}.days li{grid-template-columns:38px 1fr}.days li .ds{grid-column:2}.dgrid{grid-template-columns:1fr}.barrow{grid-template-columns:100px 1fr auto}}
+</style>
+</head>
+<body>
+<button id="stealth-toggle" class="stealth-btn" type="button" title="Modo discreto">🌓</button>
+<header class="mast"><div class="mast-in">
+  <div>
+    <h1>CRUISE - <span>PLANNER</span></h1>
+  </div>
+  <div class="mast-right">
+    <button class="icobtn" id="export-btn" title="Exportar mis datos (cruceros, personas, guardados) a un archivo">⬇</button>
+    <button class="icobtn" id="import-btn" title="Importar datos desde un archivo exportado antes">⬆</button>
+    <input type="file" id="import-input" accept="application/json" hidden>
+    <button class="icobtn" id="info-btn" title="Reglas e instrucciones del sistema">ℹ</button>
+    <div class="cur" role="group" aria-label="Moneda"><button data-c="USD" aria-pressed="true">USD $</button><button data-c="EUR" aria-pressed="false">EUR €</button></div>
+  </div>
+</div></header>
+
+<div class="wrap">
+  <div id="banner" class="banner" hidden></div>
+  <nav class="topnav" id="topnav" role="tablist">
+    <button data-sec="buscar" aria-selected="true">Buscar</button>
+    <button data-sec="mis" aria-selected="false">Mis Cruceros</button>
+  </nav>
+
+  <!-- ===== BUSCAR ===== -->
+  <section id="sec-buscar" style="display:flex;flex-direction:column;gap:14px">
+    <nav class="menu" id="submenu-buscar" role="tablist">
+      <button class="mi" data-sub="todos" aria-selected="true">TODOS</button>
+      <button class="mi" data-sub="guardados" aria-selected="false">GUARDADOS</button>
+      <button class="mi" data-sub="categorias" aria-selected="false">CATEGORÍAS</button>
+    </nav>
+
+    <div id="sub-todos" style="display:flex;flex-direction:column;gap:12px">
+      <div class="filters">
+        <label class="fld grow">Buscar barco, puerto, país o ruta<input id="f-q" type="search" placeholder="Barcelona, Poesia, Grecia, Noruega"></label>
+        <label class="fld">Naviera<select id="f-line"><option value="">Todas</option></select></label>
+        <label class="fld">Noches mín.<input id="f-nmin" type="number" min="1" step="1"></label>
+        <label class="fld">Noches máx.<input id="f-nmax" type="number" min="1" step="1"></label>
+        <label class="fld"><span id="pmax-l">Máx. $ por persona</span><input id="f-pmax" type="number" min="0" step="50"></label>
+        <label class="fld">Zarpa desde<input id="f-from" type="date"></label>
+        <label class="fld">Zarpa hasta<input id="f-to" type="date"></label>
+        <label class="fld check"><input id="f-we" type="checkbox">Salida en fin de semana o festivo</label>
+        <button class="btn ghost" id="f-reset">Limpiar</button>
+      </div>
+      <div class="legend"><span><span class="wd we">sáb</span> fin de semana</span><span><span class="wd hol">jue</span> festivo en Alemania</span><span><span class="pill p-cat" style="margin:0">Categoría</span> <span class="pill p-flag" style="margin:0">Guardado</span> <span class="badge-port">Visitado ×N</span> <span class="badge-star">★ 4.3</span></span></div>
+      <div class="tbl-wrap"><table>
+        <thead><tr>
+          <th></th>
+          <th><button data-sort="ship">Naviera · Barco</button></th>
+          <th><button data-sort="dep">Zarpa</button></th>
+          <th><button data-sort="arr">Desembarca</button></th>
+          <th class="r"><button data-sort="nights">Noches</button></th>
+          <th class="r"><button data-sort="usd">Por persona</button></th>
+          <th class="r"><button data-sort="usd">Dos personas</button></th>
+          <th class="r"><button data-sort="night">Por noche</button></th>
+          <th class="r hide-sm">Cambio</th>
+          <th></th>
+        </tr></thead>
+        <tbody id="rows"></tbody>
+      </table></div>
+      <div class="foot"><div id="count"></div><div id="pager" style="display:flex;gap:10px;align-items:center"></div></div>
+    </div>
+
+    <div id="sub-categorias" hidden style="display:flex;flex-direction:column;gap:12px">
+      <div id="cat-list-view" style="display:flex;flex-direction:column;gap:12px">
+        <div class="subbar"><div class="sub">Una categoría es un conjunto de filtros que tú defines y guardas con un nombre. No reemplaza a TODOS: pulsa "Ver cruceros" para ver, en su propia vista, solo los cruceros que cumplen esos filtros.</div><button class="btn primary" id="cat-new">+ Nueva categoría</button></div>
+        <div class="catgrid" id="cat-grid"></div>
+      </div>
+      <div id="cat-detail-view" hidden style="display:flex;flex-direction:column;gap:12px">
+        <div class="subbar">
+          <div class="sub"><button class="btn ghost" id="cat-detail-back">‹ Volver a categorías</button> <b id="cat-detail-title" style="margin-left:6px"></b></div>
+        </div>
+        <div class="tbl-wrap"><table>
+          <thead><tr>
+            <th></th>
+            <th><button data-sort="ship" data-tbl="cat">Naviera · Barco</button></th>
+            <th><button data-sort="dep" data-tbl="cat">Zarpa</button></th>
+            <th><button data-sort="arr" data-tbl="cat">Desembarca</button></th>
+            <th class="r"><button data-sort="nights" data-tbl="cat">Noches</button></th>
+            <th class="r"><button data-sort="usd" data-tbl="cat">Por persona</button></th>
+            <th class="r"><button data-sort="usd" data-tbl="cat">Dos personas</button></th>
+            <th class="r"><button data-sort="night" data-tbl="cat">Por noche</button></th>
+            <th class="r hide-sm">Cambio</th>
+            <th></th>
+          </tr></thead>
+          <tbody id="catrows"></tbody>
+        </table></div>
+        <div class="foot"><div id="catcount"></div><div id="catpager" style="display:flex;gap:10px;align-items:center"></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== MIS CRUCEROS ===== -->
+  <section id="sec-mis" hidden style="flex-direction:column;gap:14px">
+    <nav class="menu" id="submenu-mis" role="tablist">
+      <button class="mi" data-sub="resumen" aria-selected="true">RESUMEN</button>
+      <button class="mi" data-sub="pasados" aria-selected="false">PASADOS</button>
+      <button class="mi" data-sub="proximamente" aria-selected="false">PRÓXIMAMENTE</button>
+      <button class="mi" data-sub="fidelizacion" aria-selected="false">FIDELIZACIÓN</button>
+    </nav>
+
+    <div id="sub-resumen" style="display:flex;flex-direction:column;gap:16px"></div>
+
+    <div id="sub-pasados" hidden style="display:flex;flex-direction:column;gap:12px">
+      <div class="filters">
+        <label class="fld grow">Buscar barco, naviera, puerto o comentario<input id="pf-q" type="search" placeholder="Liberty, Royal Caribbean, Barcelona…"></label>
+        <label class="fld">Naviera<select id="pf-line"><option value="">Todas</option></select></label>
+        <label class="fld">Año<select id="pf-year"><option value="">Todos</option></select></label>
+        <label class="fld">Ordenar<select id="pf-sort"><option value="recent">Más reciente primero</option><option value="oldest">Más antiguo primero</option><option value="rating">Mejor valorado primero</option></select></label>
+        <button class="btn ghost" id="pf-reset">Limpiar</button>
+      </div>
+      <div class="subbar"><div class="sub" id="pasados-count"></div><button class="btn primary" id="mc-add-pasado">+ Agregar crucero</button></div>
+      <div id="pasados-list" style="display:flex;flex-direction:column;gap:10px"></div>
+    </div>
+
+    <div id="sub-proximamente" hidden style="display:flex;flex-direction:column;gap:12px">
+      <div class="subbar"><div class="sub" id="prox-count"></div><button class="btn primary" id="mc-add-prox">+ Agregar crucero</button></div>
+      <div id="prox-list" style="display:flex;flex-direction:column;gap:10px"></div>
+    </div>
+
+    <div id="sub-fidelizacion" hidden style="display:flex;flex-direction:column;gap:16px"></div>
+  </section>
+</div>
+
+<div class="modal-back" id="modal-back" hidden><div class="modal" id="modal"></div></div>
+
+<script>window.CW_DATA=__DATA__;</script>
+<script>
+(function(){
+const CDN="https://d23n7ahjfnjotp.cloudfront.net/imgs/iphone/cruisenews/new/";
+const LINES={"Royal Caribbean":["RC","#1D4FA3","royalcaribbean.com",CDN+"17_40x40.png"],"MSC":["MSC","#0B2D5B","msccruises.com",CDN+"28_40x40.png"],"Celebrity":["CEL","#1F1F1F","celebritycruises.com",CDN+"11_40x40.png"],"Princess":["PRI","#2C6FB7","princess.com",CDN+"15_40x40.png"],"Norwegian":["NCL","#0B6E8F","ncl.com",CDN+"14_40x40.png"],"Holland America":["HAL","#14335F","hollandamerica.com",CDN+"13_40x40.png"],"Costa":["COS","#E3A100","costacruises.com",CDN+"19_40x40.png"],"Disney":["DIS","#4D3B9A","disneycruise.disney.go.com",CDN+"23_40x40.png"],"Virgin Voyages":["VV","#C8102E","virginvoyages.com",CDN+"77_40x40.png"],"Cunard":["CUN","#8C1D2C","cunard.com",CDN+"20_40x40.png"],"Celestyal":["CLY","#2BA3C6","celestyal.com",CDN+"74_40x40.png"],"Azamara":["AZA","#24356B","azamara.com",CDN+"52_40x40.png"],"P&O Cruises":["P&O","#00477F","pocruises.com",CDN+"72_40x40.png"],"Margaritaville at Sea":["MAS","#0F9D8A","margaritavilleatsea.com",CDN+"136_40x40.png"]};
+const lc=l=>(LINES[l]||["?","#7D8E9B","",""]);
+const FLAG={"Grecia":"🇬🇷","Italia":"🇮🇹","Estados Unidos":"🇺🇸","Canadá":"🇨🇦","México":"🇲🇽","España":"🇪🇸","Francia":"🇫🇷","Reino Unido":"🇬🇧","Portugal":"🇵🇹","Marruecos":"🇲🇦","Bermudas":"🇧🇲","Bahamas":"🇧🇸","Aruba":"🇦🇼","Curazao":"🇨🇼","Puerto Rico (EE. UU.)":"🇵🇷","República Dominicana":"🇩🇴","Colombia":"🇨🇴","Panamá":"🇵🇦","Costa Rica":"🇨🇷","Argentina":"🇦🇷","Uruguay":"🇺🇾","Chile":"🇨🇱","Brasil":"🇧🇷","Islas Malvinas":"🇫🇰","Antigua y Barbuda":"🇦🇬","San Martín":"🇸🇽","Guadalupe (Francia)":"🇬🇵","San Cristóbal y Nieves":"🇰🇳","Antillas Neerlandesas":"🇧🇶","Antártida":"🇦🇶"};
+const ISO2={"Estados Unidos":"us","Canadá":"ca","México":"mx","España":"es","Francia":"fr","Reino Unido":"gb","Portugal":"pt","Marruecos":"ma","Bermudas":"bm","Bahamas":"bs","Aruba":"aw","Curazao":"cw","Puerto Rico (EE. UU.)":"pr","República Dominicana":"do","Colombia":"co","Panamá":"pa","Costa Rica":"cr","Argentina":"ar","Uruguay":"uy","Chile":"cl","Brasil":"br","Islas Malvinas":"fk","Antigua y Barbuda":"ag","San Martín":"sx","Guadalupe (Francia)":"gp","San Cristóbal y Nieves":"kn","Antillas Neerlandesas":"bq","Antártida":"aq",
+"Grecia":"gr","Italia":"it",
+"Albania":"al","Argelia":"dz","Samoa Americana":"as","Australia":"au","Austria":"at","Barbados":"bb","Bélgica":"be","Belice":"bz","Islas Vírgenes Británicas":"vg","Birmania (Myanmar)":"mm","Camboya":"kh","Cabo Verde":"cv","Islas Caimán":"ky","China":"cn","Islas Cook":"ck","Costa de Marfil":"ci","Croacia":"hr","Chipre":"cy","Dinamarca":"dk","Dominica":"dm","Ecuador":"ec","Egipto":"eg","El Salvador":"sv","Estonia":"ee","Islas Feroe":"fo","Fiyi":"fj","Finlandia":"fi","Guayana Francesa":"gf","Polinesia Francesa":"pf","Gambia":"gm","Alemania":"de","Groenlandia":"gl","Granada":"gd","Guatemala":"gt","Haití":"ht","Honduras":"hn","Hong Kong":"hk","Hungría":"hu","Islandia":"is","India":"in","Indonesia":"id","Irlanda":"ie","Israel":"il","Jamaica":"jm","Japón":"jp","Jordania":"jo","Kenia":"ke","Kiribati":"ki","Corea del Sur":"kr","Letonia":"lv","Lituania":"lt","Madagascar":"mg","Malasia":"my","Maldivas":"mv","Malta":"mt","Martinica (Francia)":"mq","Mauricio":"mu","Mónaco":"mc","Montenegro":"me","Mozambique":"mz","Namibia":"na","Países Bajos":"nl","Nueva Caledonia":"nc","Nueva Zelanda":"nz","Noruega":"no","Omán":"om","Papúa Nueva Guinea":"pg","Perú":"pe","Filipinas":"ph","Pitcairn":"pn","Islas Pitcairn":"pn","Polonia":"pl","Catar":"qa","Reunión (Francia)":"re","San Bartolomé (Francia)":"bl","Samoa":"ws","Arabia Saudita":"sa","Escocia":"gb","Senegal":"sn","Seychelles":"sc","Singapur":"sg","Eslovaquia":"sk","Eslovenia":"si","Islas Salomón":"sb","Sudáfrica":"za","Sri Lanka":"lk","Santa Elena":"sh","Santa Lucía":"lc","San Vicente y las Granadinas":"vc","Suecia":"se","Suiza":"ch","Taiwán":"tw","Tailandia":"th","Tonga":"to","Trinidad y Tobago":"tt","Túnez":"tn","Turquía":"tr","Islas Turcas y Caicos":"tc","Islas Vírgenes de EE. UU.":"vi","Emiratos Árabes Unidos":"ae","Vanuatu":"vu","Vietnam":"vn"};
+function flagTag(country){const code=ISO2[country];const emo=(FLAG[country]||"").replace(/'/g,"");if(!code)return emo?`<span>${emo}</span>`:"";return`<img class="flagimg" src="https://flagcdn.com/20x15/${code}.png" alt="${esc(country)}" onerror="this.outerHTML='${emo}'">`}
+const WD=["dom","lun","mar","mié","jue","vie","sáb"];
+const MK=8;
+const WORLD_LAND=["M-1344,-520L-1320,-472L-1216,-464L-1080,-464L-1040,-432L-1000,-392L-992,-368L-976,-296L-936,-256L-912,-224L-840,-160L-776,-128L-736,-120L-696,-104L-664,-72L-632,-64L-616,-72L-672,-88L-696,-120L-720,-128L-704,-168L-720,-176L-776,-208L-752,-240L-712,-240L-672,-240L-656,-200L-640,-208L-616,-272L-592,-320L-560,-344L-528,-360L-480,-400L-520,-480L-640,-520L-800,-560L-1040,-560L-1240,-560L-1344,-520Z",
+"M-600,-88L-568,-88L-512,-80L-464,-64L-408,-8L-352,16L-304,104L-320,160L-344,184L-384,216L-424,272L-448,280L-456,280L-496,320L-520,360L-536,400L-544,432L-560,424L-576,408L-584,360L-576,280L-560,160L-560,40L-624,48L-640,32L-640,0L-616,-24L-616,-64Z",
+"M-72,-296L-72,-344L-16,-344L-32,-384L-8,-392L0,-400L8,-408L12,-410.4L-8,-405.6L-24,-401.6L-40,-400L-40,-424L-24,-440L-16,-464L0,-416L16,-408L32,-408L48,-424L64,-432L64,-376L56,-352L24,-344L16,-328L0,-320L-16,-296L-48,-288L-72,-296Z",
+"M-72,-264L-48,-280L-16,-280L24,-296L72,-296L88,-272L160,-256L200,-248L256,-248L280,-248L80,-160L-40,-160L-80,-200L-72,-264Z"];
+const PC={"Alicante":[38.35,-0.48],"Anchorage":[61.22,-149.90],"Barcelona":[41.39,2.17],"Basseterre":[17.30,-62.72],"Buenos Aires":[-34.60,-58.38],"Cabo Rojo":[17.93,-71.63],"Cabo San Lucas":[22.89,-109.91],"Cape Lookout":[-55.90,-67.30],"Cartagena":[10.39,-75.51],"Celebration Key":[26.60,-78.35],"College Fjord":[61.13,-147.52],"Colon":[9.36,-79.90],"Cruising Antarctic Peninsula":[-63.00,-57.00],"Cruising Beagle Channel":[-54.90,-67.60],"Cruising Cape Horn":[-55.98,-67.28],"Cruising the Panama Canal":[9.08,-79.68],"Denali National Park":[63.33,-149.40],"Dover":[51.13,1.31],"Fort Lauderdale":[26.12,-80.11],"Glacier Bay":[58.66,-136.90],"Great Stirrup Cay":[25.82,-77.91],"Honolulu":[21.31,-157.86],"Huatulco":[15.77,-96.13],"Icy Strait Point":[58.17,-135.44],"Iguazu Falls":[-25.68,-54.44],"Juneau":[58.30,-134.42],"Ketchikan":[55.34,-131.65],"King's Wharf":[32.32,-64.83],"Los Angeles":[33.74,-118.27],"Malaga":[36.72,-4.42],"Miami":[25.77,-80.19],"Montevideo":[-34.90,-56.19],"Motril":[36.75,-3.52],"Mount McKinley":[63.07,-151.01],"Oranjestad":[12.52,-70.03],"Paradise Bay":[-64.87,-62.87],"Philipsburg (St. Maarten)":[18.02,-63.05],"Pointe-a-Pitre":[16.24,-61.53],"Ponta Delgada":[37.74,-25.67],"Port Stanley":[-51.70,-57.85],"Portland Harbour":[50.59,-2.44],"Puerto Limon":[10.00,-83.03],"Puerto Madryn":[-42.77,-65.04],"Puerto Montt":[-41.47,-72.94],"Puerto Plata":[19.79,-70.69],"Punta Arenas":[-53.16,-70.91],"Rio de Janeiro":[-22.91,-43.17],"Royal Naval Dockyard (West End)":[32.33,-64.84],"San Antonio":[-33.59,-71.61],"San Diego":[32.72,-117.17],"San Francisco":[37.77,-122.42],"San Juan":[18.47,-66.12],"Santa Cruz de Tenerife":[28.47,-16.25],"Seattle":[47.61,-122.34],"Skagway":[59.46,-135.31],"Southampton":[50.91,-1.40],"St John's":[17.12,-61.85],"Tangier":[35.78,-5.81],"Tracy Arm Fjord":[57.63,-133.30],"Ushuaia":[-54.81,-68.30],"Vancouver":[49.28,-123.12],"Victoria":[48.43,-123.37],"Whittier":[60.77,-148.68],"Willemstad (Curacao)":[12.11,-68.93]};
+const PCTRY={"Alicante":"España","Anchorage":"Estados Unidos","Barcelona":"España","Basseterre":"San Cristóbal y Nieves","Buenos Aires":"Argentina","Cabo Rojo":"República Dominicana","Cabo San Lucas":"México","Celebration Key":"Bahamas","College Fjord":"Estados Unidos","Colon":"Panamá","Cruising Antarctic Peninsula":"Antártida","Denali National Park":"Estados Unidos","Dover":"Reino Unido","Fort Lauderdale":"Estados Unidos","Glacier Bay":"Estados Unidos","Great Stirrup Cay":"Bahamas","Honolulu":"Estados Unidos","Huatulco":"México","Icy Strait Point":"Estados Unidos","Iguazu Falls":"Brasil","Juneau":"Estados Unidos","Ketchikan":"Estados Unidos","King's Wharf":"Bermudas","Los Angeles":"Estados Unidos","Malaga":"España","Miami":"Estados Unidos","Montevideo":"Uruguay","Motril":"España","Mount McKinley":"Estados Unidos","Oranjestad":"Aruba","Paradise Bay":"Antártida","Philipsburg (St. Maarten)":"San Martín","Pointe-a-Pitre":"Guadalupe (Francia)","Ponta Delgada":"Portugal","Port Stanley":"Islas Malvinas","Portland Harbour":"Reino Unido","Puerto Limon":"Costa Rica","Puerto Madryn":"Argentina","Puerto Montt":"Chile","Puerto Plata":"República Dominicana","Punta Arenas":"Chile","Rio de Janeiro":"Brasil","Royal Naval Dockyard (West End)":"Bermudas","San Antonio":"Chile","San Diego":"Estados Unidos","San Francisco":"Estados Unidos","San Juan":"Puerto Rico (EE. UU.)","Santa Cruz de Tenerife":"España","Seattle":"Estados Unidos","Skagway":"Estados Unidos","Southampton":"Reino Unido","St John's":"Antigua y Barbuda","Tangier":"Marruecos","Tracy Arm Fjord":"Estados Unidos","Ushuaia":"Argentina","Vancouver":"Canadá","Victoria":"Canadá","Whittier":"Estados Unidos","Willemstad (Curacao)":"Curazao"};
+const CONTINENT={"Albania":"Europa","Alemania":"Europa","Antigua y Barbuda":"Caribe","Antillas Neerlandesas":"Caribe","Antártida":"Antártida","Arabia Saudita":"Asia","Argelia":"África","Argentina":"Sudamérica","Aruba":"Caribe","Australia":"Oceanía","Austria":"Europa","Bahamas":"Caribe","Barbados":"Caribe","Belice":"Centroamérica","Bermudas":"Caribe","Birmania (Myanmar)":"Asia","Brasil":"Sudamérica","Bélgica":"Europa","Cabo Verde":"África","Camboya":"Asia","Canadá":"Norteamérica","Catar":"Asia","Chile":"Sudamérica","China":"Asia","Chipre":"Europa","Colombia":"Sudamérica","Corea del Sur":"Asia","Costa Rica":"Centroamérica","Costa de Marfil":"África","Croacia":"Europa","Curazao":"Caribe","Dinamarca":"Europa","Dominica":"Caribe","Ecuador":"Sudamérica","Egipto":"África","El Salvador":"Centroamérica","Emiratos Árabes Unidos":"Asia","Escocia":"Europa","Eslovaquia":"Europa","Eslovenia":"Europa","España":"Europa","Estados Unidos":"Norteamérica","Estonia":"Europa","Filipinas":"Asia","Finlandia":"Europa","Fiyi":"Oceanía","Francia":"Europa","Gambia":"África","Granada":"Caribe","Grecia":"Europa","Groenlandia":"Norteamérica","Guadalupe (Francia)":"Caribe","Guatemala":"Centroamérica","Guayana Francesa":"Sudamérica","Haití":"Caribe","Honduras":"Centroamérica","Hong Kong":"Asia","Hungría":"Europa","India":"Asia","Indonesia":"Asia","Irlanda":"Europa","Islandia":"Europa","Islas Caimán":"Caribe","Islas Cook":"Oceanía","Islas Feroe":"Europa","Islas Malvinas":"Sudamérica","Islas Pitcairn":"Oceanía","Islas Salomón":"Oceanía","Islas Turcas y Caicos":"Caribe","Islas Vírgenes Británicas":"Caribe","Islas Vírgenes de EE. UU.":"Caribe","Israel":"Asia","Italia":"Europa","Jamaica":"Caribe","Japón":"Asia","Jordania":"Asia","Kenia":"África","Kiribati":"Oceanía","Letonia":"Europa","Lituania":"Europa","Madagascar":"África","Malasia":"Asia","Maldivas":"Asia","Malta":"Europa","Marruecos":"África","Martinica (Francia)":"Caribe","Mauricio":"África","Montenegro":"Europa","Mozambique":"África","México":"Norteamérica","Mónaco":"Europa","Namibia":"África","Noruega":"Europa","Nueva Caledonia":"Oceanía","Nueva Zelanda":"Oceanía","Omán":"Asia","Panamá":"Centroamérica","Papúa Nueva Guinea":"Oceanía","Países Bajos":"Europa","Perú":"Sudamérica","Pitcairn":"Oceanía","Polinesia Francesa":"Oceanía","Polonia":"Europa","Portugal":"Europa","Puerto Rico (EE. UU.)":"Caribe","Reino Unido":"Europa","República Dominicana":"Caribe","Reunión (Francia)":"África","Samoa":"Oceanía","Samoa Americana":"Oceanía","San Bartolomé (Francia)":"Caribe","San Cristóbal y Nieves":"Caribe","San Martín":"Caribe","San Vicente y las Granadinas":"Caribe","Santa Elena":"África","Santa Lucía":"Caribe","Senegal":"África","Seychelles":"África","Singapur":"Asia","Sri Lanka":"Asia","Sudáfrica":"África","Suecia":"Europa","Suiza":"Europa","Tailandia":"Asia","Taiwán":"Asia","Tonga":"Oceanía","Trinidad y Tobago":"Caribe","Turquía":"Europa","Túnez":"África","Uruguay":"Sudamérica","Vanuatu":"Oceanía","Vietnam":"Asia"};
+const PORT_COUNTRY={"Aarhus":"Dinamarca","Aberdeen":"Reino Unido","Abidjan":"Costa de Marfil","Abraao":"Brasil","Abu Dhabi":"Emiratos Árabes Unidos","Aburatsu":"Japón","Acajutla":"El Salvador","Acapulco":"México","Adelaide":"Australia","Agadir":"Marruecos","Aghios Nikolaos":"Grecia","Airlie Beach":"Australia","Aitutaki":"Islas Cook","Ajaccio":"Francia","Akaroa":"Nueva Zelanda","Akita":"Japón","Akureyri":"Islandia","Alanya":"Turquía","Albany":"Australia","Alesund":"Noruega","Alexandria":"Egipto","Alghero":"Italia","Algiers":"Argelia","Alicante":"España","Almeria":"España","Alotau":"Papúa Nueva Guinea","Alta":"Noruega","Alter Do Chao":"Brasil","Amalfi":"Italia","Amber Cove":"República Dominicana","Amorgos":"Grecia","Amsterdam":"Países Bajos","Anchorage":"Estados Unidos","Ancona":"Italia","Andalsnes":"Noruega","Angra Dos Reis":"Brasil","Antalya":"Turquía","Antarctic Peninsula":"Antártida","Antwerp":"Bélgica","Aomori":"Japón","Apia":"Samoa","Aqaba (Petra)":"Jordania","Arendal":"Noruega","Argostoli":"Grecia","Arica":"Chile","Arrecife":"España","Arroyo Barril":"República Dominicana","Ashdod (Port for Jerusalem)":"Israel","Astoria":"Estados Unidos","Athens (Port of Piraeus)":"Grecia","Auckland":"Nueva Zelanda","Avatoru":"Polinesia Francesa","Bahia De Opunoha":"Polinesia Francesa","Baie Comeau":"Canadá","Balboa":"Panamá","Bali (Benoa)":"Indonesia","Baltimore":"Estados Unidos","Baltra, Galapagos":"Ecuador","Bamberg":"Alemania","Banff":"Canadá","Bangkok (Laem Chabang)":"Tailandia","Banjul":"Gambia","Bantry":"Irlanda","Baoshan (Shanghai)":"China","Bar":"Montenegro","Barcelona":"España","Bari":"Italia","Basel (Saxon)":"Suiza","Basseterre":"San Cristóbal y Nieves","Batu Tara":"Indonesia","Bay of Islands":"Nueva Zelanda","Bayonne (Cape Liberty)":"Estados Unidos","Belem":"Brasil","Belfast":"Reino Unido","Belize City":"Belice","Bella Bella, British Columbia":"Canadá","Beppu":"Japón","Bergen":"Noruega","Bilbao":"España","Bimini Islands":"Bahamas","Bitung":"Indonesia","Boca da Valeria":"Brasil","Bocas Del Toro":"Panamá","Bodo":"Noruega","Bodrum":"Turquía","Bonaire":"Antillas Neerlandesas","Bora Bora":"Polinesia Francesa","Boracay":"Filipinas","Bordeaux":"Francia","Bornholm":"Dinamarca","Boston":"Estados Unidos","Bounty Bay":"Islas Pitcairn","Bratislava":"Eslovaquia","Breisach":"Alemania","Bremerhaven":"Alemania","Brest":"Francia","Bridgetown":"Barbados","Brindisi":"Italia","Brisbane":"Australia","Brooklyn":"Estados Unidos","Broome":"Australia","Bruinisse":"Países Bajos","Brussels":"Bélgica","Budapest":"Hungría","Buenos Aires":"Argentina","Burnie":"Australia","Busan (Pusan)":"Corea del Sur","Busselton":"Australia","Buzios":"Brasil","Cabo Rojo":"República Dominicana","Cabo San Lucas":"México","Cadiz (Seville)":"España","Caen":"Francia","Cagliari":"Italia","Cai Lan":"Vietnam","Cairns":"Australia","Calgary":"Canadá","Callao":"Perú","Calvi":"Francia","Cam Ranh":"Vietnam","Camboriu":"Brasil","Cannes":"Francia","Cap-Aux-Meules":"Canadá","Cape Lookout":"Antártida","Cape Town":"Sudáfrica","Cartagena":"Colombia","Cartagena (España)":"España","Casablanca":"Marruecos","Castries":"Santa Lucía","Castro":"Chile","Catalina Island":"República Dominicana","Catania":"Italia","Celebration Key":"Bahamas","Celukan Bawang":"Indonesia","Cesme":"Turquía","Ceuta":"España","Chan May":"Vietnam","Chania":"Grecia","Charlestown":"San Cristóbal y Nieves","Charlotte Amalie (St Thomas)":"Islas Vírgenes de EE. UU.","Charlottetown":"Canadá","Charlotteville":"Trinidad y Tobago","Cheju Do":"Corea del Sur","Cherbourg":"Francia","Chioggia (Venice)":"Italia","Chios":"Grecia","Cill Ronain":"Irlanda","Civitavecchia (Rome)":"Italia","Coastal Navigation":"Estados Unidos","Cochin":"India","College Fjord":"Estados Unidos","Cologne":"Alemania","Colombo":"Sri Lanka","Colon":"Panamá","Cooktown":"Australia","Copacabana":"Brasil","Copenhagen":"Dinamarca","Coquimbo":"Chile","Corfu":"Grecia","Cork":"Irlanda","Cork (Cobh)":"Irlanda","Cormorant Point, Floreana Island, Galapagos":"Ecuador","Corner Brook":"Canadá","Coron":"Filipinas","Costa Maya":"México","Cozumel":"México","Cristobal":"Panamá","Crotone":"Italia","Curacao":"Antillas Neerlandesas","Cusco":"Perú","Da Nang":"Vietnam","Dakar":"Senegal","Dalian":"China","Darwin":"Australia","Delphi":"Grecia","Denali National Park":"Estados Unidos","Denarau":"Fiyi","Devil's Island":"Guayana Francesa","Diego Suarez":"Madagascar","Disney Castaway Cay":"Bahamas","Disney Lookout Cay at Lighthouse Point":"Bahamas","Djupivogur":"Islandia","Doha":"Catar","Dominica":"Dominica","Dordrecht":"Países Bajos","Douglas":"Reino Unido","Dover":"Reino Unido","Dravuni Island":"Fiyi","Dubai":"Emiratos Árabes Unidos","Dublin":"Irlanda","Dubrovnik":"Croacia","Dun Laoghaire":"Irlanda","Dundee":"Reino Unido","Dunedin":"Nueva Zelanda","Dunkirk":"Francia","Dunmore East":"Irlanda","Durban":"Sudáfrica","Durnstein":"Austria","Dusky Sound":"Nueva Zelanda","Dusseldorf":"Alemania","Dutch Harbor":"Estados Unidos","Easo":"Nueva Caledonia","Easter Island":"Chile","Eastport":"Estados Unidos","Eden":"Australia","Edinburgh":"Reino Unido","Eidfjord":"Noruega","Elephant Island":"Antártida","Elizabeth Bay":"Ecuador","Endicott Arm":"Estados Unidos","Engelhartszell":"Austria","Ensenada":"México","Eskifjordur":"Islandia","Esperance":"Australia","Exmouth":"Australia","Fairbanks":"Estados Unidos","Fakarava":"Polinesia Francesa","Falmouth":"Jamaica","Fanning Island":"Kiribati","Ferrol":"España","Flaam":"Noruega","Florence":"Italia","Fort Lauderdale":"Estados Unidos","Fort de France":"Martinica (Francia)","Fortaleza":"Brasil","Fowey":"Reino Unido","Foynes":"Irlanda","Fraser Island":"Australia","Fredericia":"Dinamarca","Frederiksted":"Islas Vírgenes de EE. UU.","Freeport":"Bahamas","Fremantle":"Australia","Fuerte Amador":"Panamá","Fuerteventura":"España","Fukuoka":"Japón","Fushiki":"Japón","Fusina Port (Venice)":"Italia","Galveston":"Estados Unidos","Galway":"Irlanda","Gangjeong":"Corea del Sur","Gaspe":"Canadá","Gdansk":"Polonia","Gdynia":"Polonia","Geiranger":"Noruega","General San Martin":"Perú","Genoa":"Italia","Georgetown":"Islas Caimán","Geraldton":"Australia","Getxo":"España","Ghent":"Bélgica","Giardini Naxos":"Italia","Gibraltar":"Reino Unido","Gijon":"España","Gisborne":"Nueva Zelanda","Glacier Alley":"Chile","Glacier Bay":"Estados Unidos","Gladstone":"Australia","Golfo Aranci":"Italia","Gonyu":"Hungría","Gothenburg":"Suecia","Gran Canaria":"España","Grand Bahama Island":"Bahamas","Grand Turk":"Islas Turcas y Caicos","Great Barrier Reef":"Australia","Great Oyster Bay":"Australia","Great Stirrup Cay":"Bahamas","Greencastle":"Irlanda","Greenock":"Reino Unido","Grein":"Austria","Grenada":"Granada","Grenville Channel":"Canadá","Grundarfjordur":"Islandia","Guadeloupe":"Francia","Guaymas":"México","Guernsey":"Reino Unido","Gustavia, St. Barts":"San Bartolomé (Francia)","Gythion":"Grecia","Ha Long":"Vietnam","Haifa (Jerusalem)":"Israel","Haines":"Estados Unidos","Hakata":"Japón","Hakodate":"Japón","Half Moon Cay":"Bahamas","Halifax":"Canadá","Hambantota":"Sri Lanka","Hamburg":"Alemania","Hamilton":"Bermudas","Hammerfest":"Noruega","Hanga Roa":"Chile","Hardangerfjord":"Noruega","Harstad":"Noruega","Harvest Caye":"Belice","Haugesund":"Noruega","Havre Saint Pierre":"Canadá","Heimaey":"Islandia","Hellesylt":"Noruega","Helsingborg":"Suecia","Helsinki":"Finlandia","Heraklion":"Grecia","Hilo":"Estados Unidos","Hirara":"Japón","Hiroshima":"Japón","Hitachinaka":"Japón","Ho Chi Minh City (Formerly Saigon)":"Vietnam","Hobart":"Australia","Holyhead":"Reino Unido","Homer":"Estados Unidos","Honfleur":"Francia","Hong Kong":"Hong Kong","Honiara":"Islas Salomón","Honningsvag":"Noruega","Honolulu":"Estados Unidos","Horta":"Portugal","Huahine":"Polinesia Francesa","Hualien":"Taiwán","Huatulco":"México","Husavik":"Islandia","Hvar":"Croacia","Hydra":"Grecia","Ibiza":"España","Icoaraci":"Brasil","Icy Strait Point":"Estados Unidos","Ijmuiden":"Países Bajos","Ile Royale":"Guayana Francesa","Ilha Grande":"Brasil","Ilhabela":"Brasil","Ilheus":"Brasil","Invergordon":"Reino Unido","Inverness, Scotland":"Reino Unido","Iquique":"Chile","Isafjordur":"Islandia","Ishinomaki":"Japón","Isle of Mull, Scotland, United Kingdom":"Reino Unido","Isle of Pines":"Nueva Caledonia","Istanbul":"Turquía","Itajai":"Brasil","Itea":"Grecia","Izmir (Port for Ephesus)":"Turquía","Jacksonville":"Estados Unidos","Jakarta":"Indonesia","Jamestown":"Santa Elena","Jayapura":"Indonesia","Jeddah":"Arabia Saudita","Jost Van Dyke":"Islas Vírgenes Británicas","Juneau":"Estados Unidos","Jurassic Coast, England":"Reino Unido","Kagoshima":"Japón","Kaikoura":"Nueva Zelanda","Kalabaka, Greece":"Grecia","Kamloops":"Canadá","Kanazawa":"Japón","Kangaroo Island":"Australia","Kaohsiung":"Taiwán","Karlskrona":"Suecia","Katakolon (Olympia)":"Grecia","Kauai":"Estados Unidos","Kavalla":"Grecia","Keelung (Taipei)":"Taiwán","Kefalonia":"Grecia","Kepez":"Turquía","Ketchikan":"Estados Unidos","Ketchikan - Ward Cove, Alaska":"Estados Unidos","Key West":"Estados Unidos","Kiel":"Alemania","Killybegs":"Irlanda","King George Island":"Antártida","King's Wharf":"Bermudas","Kingstown":"San Vicente y las Granadinas","Kiriwina":"Papúa Nueva Guinea","Kirkwall":"Escocia","Kitakyushu, Japan":"Japón","Klaipeda":"Lituania","Klawock":"Estados Unidos","Kobe":"Japón","Koblenz":"Alemania","Kochi":"Japón","Kodiak":"Estados Unidos","Koh Samui":"Tailandia","Komodo Island":"Indonesia","Kona":"Estados Unidos","Koper":"Eslovenia","Korcula":"Croacia","Kos":"Grecia","Kota Kinabalu":"Malasia","Kotka, Finland":"Finlandia","Kotor":"Montenegro","Krems":"Austria","Kristiansand":"Noruega","Kristiansund":"Noruega","Kuala Lumpur (Port Kelang)":"Malasia","Kuala Terengganu":"Malasia","Kumano, Japan":"Japón","Kusadasi (Ephesus)":"Turquía","Kushiro":"Japón","La Baie":"Canadá","La Coruna":"España","La Goulette":"Túnez","La Palma":"España","La Paz":"México","La Possession":"Reunión (Francia)","La Rochelle":"Francia","La Romana":"República Dominicana","La Seyne-sur-Mer":"Francia","La Spezia":"Italia","Labadee":"Haití","Langkawi Island":"Malasia","Lanzarote":"España","Las Bachas":"Ecuador","Las Palmas":"España","Lautoka":"Fiyi","Lavrion":"Grecia","Le Port":"Francia","Le Verdon":"Francia","Leith":"Reino Unido","Leixoes":"Portugal","Leknes":"Noruega","Lembar":"Indonesia","Lerwick":"Reino Unido","Liepaja, Latvia":"Letonia","Lifou":"Nueva Caledonia","Lima":"Perú","Limassol":"Chipre","Linz":"Alemania","Lisbon":"Portugal","Liverpool":"Reino Unido","Livorno":"Italia","Lombok":"Indonesia","Londonderry":"Irlanda","Longyearbyen":"Noruega","Loreto":"México","Lorient":"Francia","Los Angeles":"Estados Unidos","Luderitz":"Namibia","Luganville":"Vanuatu","Lunenburg":"Canadá","Lyngdal":"Noruega","Lyttelton":"Nueva Zelanda","Maastricht":"Países Bajos","Macapa":"Brasil","Maceio":"Brasil","Madeira":"Portugal","Mahogany Bay":"Honduras","Mahon":"España","Mainz":"Alemania","Maizuru":"Japón","Malacca":"Malasia","Malaga":"España","Male":"Maldivas","Maloy":"Noruega","Manaus":"Brasil","Mandal":"Noruega","Manila":"Filipinas","Manta":"Ecuador","Manzanillo":"México","Maputo":"Mozambique","Marghera Port":"Italia","Mariehamn":"Finlandia","Marmaris":"Turquía","Marseille":"Francia","Matsuyama":"Japón","Maui":"Estados Unidos","Mayreau":"San Vicente y las Granadinas","Mazatlan":"México","Melbourne":"Australia","Melchior Islands":"Antártida","Melilla":"España","Melk":"Austria","Messina":"Italia","Miami":"Estados Unidos","Milford Sound":"Nueva Zelanda","Miltenberg":"Alemania","Mindelo":"Cabo Verde","Miquelon":"Canadá","Misty Fjord, Alaska":"Estados Unidos","Miyako":"Japón","Miyako, Japan":"Japón","Mobile":"Estados Unidos","Molde":"Noruega","Mombasa":"Kenia","Monemvasia":"Grecia","Monte Carlo":"Mónaco","Monte-Carlo Bay":"Mónaco","Montego Bay":"Jamaica","Montevideo":"Uruguay","Montreal":"Canadá","Mooloolaba":"Australia","Moorea":"Polinesia Francesa","Moreton Island, Australia":"Australia","Mossel Bay":"Sudáfrica","Motril":"España","Muara Siberut":"Indonesia","Mumbai":"India","Muroran":"Japón","Muscat":"Omán","Mykonos":"Grecia","Mystery Island":"Vanuatu","Mytilene":"Grecia","Na Pali Coast, Kauai, Hawaii":"Estados Unidos","Nafplion":"Grecia","Nagasaki":"Japón","Nagoya":"Japón","Naha":"Japón","Nanaimo":"Canadá","Nanortalik":"Groenlandia","Napier":"Nueva Zelanda","Naples":"Italia","Narvik":"Noruega","Nassau":"Bahamas","Natal":"Brasil","Nathon":"Tailandia","Nelson":"Nueva Zelanda","Nelson Strait, South Shetland Islands":"Antártida","New Orleans":"Estados Unidos","New Plymouth":"Nueva Zelanda","New York":"Estados Unidos","Newcastle":"Australia","Newhaven":"Reino Unido","Newport":"Estados Unidos","Nha Trang":"Vietnam","Nice":"Francia","Niigata":"Japón","Nijmegen":"Países Bajos","Nome":"Estados Unidos","Nootka Sound, British Columbia":"Canadá","Nordfjordeid, Norway":"Noruega","Norfolk":"Estados Unidos","Norfolk Island":"Australia","North Bar, Brazil":"Brasil","North Cape":"Noruega","Nosy-be":"Madagascar","Noumea":"Nueva Caledonia","Nuku Alofa":"Tonga","Nuremberg":"Alemania","Nynashamn":"Suecia","Oak Bluffs":"Estados Unidos","Oarai, Japan":"Japón","Oban":"Escocia","Ocean Cay":"Bahamas","Ocho Rios":"Jamaica","Odda":"Noruega","Okinawa":"Japón","Olbia":"Italia","Olden":"Noruega","Omaezaki, Japan":"Japón","Opatija":"Croacia","Oranjestad":"Aruba","Osaka":"Japón","Oslo":"Noruega","Otaru":"Japón","Paamiut":"Groenlandia","Pago Pago":"Samoa Americana","Palamos":"España","Palermo":"Italia","Palma de Mallorca":"España","Panama City":"Panamá","Papeete":"Polinesia Francesa","Paradise Bay":"Antártida","Paranagua":"Brasil","Parati":"Brasil","Parintins":"Brasil","Paris (LeHavre)":"Francia","Paros":"Grecia","Pasajes":"España","Passau":"Alemania","Patmos":"Grecia","Pattaya":"Tailandia","Penang":"Malasia","Penneshaw":"Australia","Perfect Day at CocoCay, Bahamas":"Bahamas","Philadelphia":"Estados Unidos","Philipsburg (St. Maarten)":"Antillas Neerlandesas","Phillip Island":"Australia","Phu My":"Vietnam","Phuket":"Tailandia","Phuoc An Port":"Vietnam","Pichilinque":"México","Picton":"Nueva Zelanda","Piran":"Eslovenia","Pisco":"Perú","Pitcairn Islands":"Pitcairn","Plymouth":"Reino Unido","Pointe des Galets":"Reunión (Francia)","Pointe-a-Pitre":"Guadalupe (Francia)","Pomene, Mozambique":"Mozambique","Ponce":"Puerto Rico (EE. UU.)","Ponta Delgada":"Portugal","Port Arthur":"Australia","Port Canaveral":"Estados Unidos","Port Chalmers":"Nueva Zelanda","Port Douglas":"Australia","Port Elizabeth":"Sudáfrica","Port Lincoln":"Australia","Port Louis":"Mauricio","Port Said":"Egipto","Port Stanley":"Islas Malvinas","Port Vila":"Vanuatu","Port d' Ehoala":"Madagascar","Port of Spain":"Trinidad y Tobago","Port of Tyne":"Reino Unido","Portimao":"Portugal","Portland":"Estados Unidos","Portland Harbour":"Reino Unido","Porto Belo":"Brasil","Porto Corsini, Ravenna (Venice)":"Italia","Porto Empedocle":"Italia","Porto Grande":"Cabo Verde","Porto Malai":"Malasia","Porto Santo Stefano":"Italia","Porto Vecchio":"Francia","Portoferraio":"Italia","Portofino":"Italia","Portovenere":"Italia","Portsmouth":"Reino Unido","Portuguese Island":"Mozambique","Praia":"Cabo Verde","Praia da Vitoria":"Portugal","Prince Rupert":"Canadá","Princess Royal Island, British Columbia, Canada":"Canadá","Progreso":"México","Puerto Ayora, Santa Cruz Island, Galapagos":"Ecuador","Puerto Caldera":"Costa Rica","Puerto Chacabuco":"Chile","Puerto Chiapas":"México","Puerto Egas":"Ecuador","Puerto Limon":"Costa Rica","Puerto Madryn":"Argentina","Puerto Montt":"Chile","Puerto Plata":"República Dominicana","Puerto Princesa":"Filipinas","Puerto Quetzal":"Guatemala","Puerto Vallarta":"México","Puerto del Rosario":"España","Pula":"Croacia","Punta Arenas":"Chile","Punta Espinoza, Fernandina Island, Galapagos":"Ecuador","Punta Moreno":"Ecuador","Punta del Este":"Uruguay","Puntarenas":"Costa Rica","Qaqortoq":"Groenlandia","Quebec City":"Canadá","Quepos":"Costa Rica","Quito":"Ecuador","Rabaul":"Papúa Nueva Guinea","Raiatea":"Polinesia Francesa","Rarotonga":"Islas Cook","Recife":"Brasil","Red Bay":"Canadá","Regensburg":"Alemania","Reunion":"Francia","Reykjanesbaer":"Islandia","Reykjavik":"Islandia","Rhodes":"Grecia","Richards Bay":"Sudáfrica","Riga":"Letonia","Rijeka":"Croacia","Ringaskiddy":"Irlanda","Rio Grande":"Brasil","Rio de Janeiro":"Brasil","Road Harbour, Tortola":"Islas Vírgenes Británicas","Road Town":"Islas Vírgenes Británicas","Roatan":"Honduras","Robinson Crusoe Island":"Chile","Rockland":"Estados Unidos","Rome":"Italia","Ronne":"Dinamarca","Roseau":"Dominica","Rosendal":"Noruega","Rostock":"Alemania","Rotterdam":"Países Bajos","Rouen":"Francia","Rovinj":"Croacia","Royal Beach Club Lelepa":"Vanuatu","Royal Naval Dockyard (West End)":"Bermudas","Rudesheim":"Alemania","Runavik":"Dinamarca","Sabang":"Indonesia","Safaga":"Egipto","Saguenay, Quebec, Canada":"Canadá","Saint-Pierre, Martinique, France":"Francia","Sakaiminato":"Japón","Sakata, Japan":"Japón","Salavery":"Perú","Salerno":"Italia","Salvador de Bahia":"Brasil","Samana":"República Dominicana","San Andres Island":"Colombia","San Antonio":"Chile","San Cristobal Island (Puerto Baquerizo)":"Ecuador","San Diego":"Estados Unidos","San Francisco":"Estados Unidos","San Juan":"Puerto Rico (EE. UU.)","San Sebastian de la Gomera":"España","Sanary Sur Mer":"Francia","Sandakan":"Malasia","Sandnes, Norway":"Noruega","Santa Barbara":"Estados Unidos","Santa Catalina Island, California":"Estados Unidos","Santa Cruz de Tenerife":"España","Santa Cruz de la Palma":"España","Santa Margherita":"Italia","Santa Marta":"Colombia","Santander":"España","Santarem":"Brasil","Santiago (Valparaiso)":"Chile","Santo Domingo":"República Dominicana","Santorini":"Grecia","Santos (Sao Paulo)":"Brasil","Sao Francisco do Sul":"Brasil","Sao Vicente":"Cabo Verde","Saranda":"Albania","Sasebo":"Japón","Savona":"Italia","Savusavu":"Fiyi","Scarborough":"Trinidad y Tobago","Seattle":"Estados Unidos","Semarang":"Indonesia","Sendai":"Japón","Seogwipo":"Corea del Sur","Seoul (Incheon)":"Corea del Sur","Sept-Iles":"Canadá","Sete":"Francia","Seville":"España","Seward":"Estados Unidos","Seydisfjordur":"Islandia","Seymour Narrows":"Canadá","Shanghai":"China","Sharm El Sheik":"Egipto","Shimizu":"Japón","Shimonoseki":"Japón","Sibenik":"Croacia","Sihanoukville":"Camboya","Singapore":"Singapur","Sint Maarten":"Antillas Neerlandesas","Siracusa":"Italia","Sitka":"Estados Unidos","Skagen":"Dinamarca","Skagway":"Estados Unidos","Skjolden":"Noruega","Slawi Bay":"Indonesia","Snow Island, South Shetland Islands":"Antártida","Sokcho":"Corea del Sur","Sorrento":"Italia","Souda Bay":"Grecia","South Cornwall Coast, England":"Reino Unido","South Plaza":"Ecuador","South Queensferry":"Reino Unido","Southampton":"Reino Unido","Speyer":"Alemania","Split":"Croacia","St Anthony":"Canadá","St Croix":"Islas Vírgenes de EE. UU.","St George's":"Granada","St Jean de Luz":"Francia","St John":"Canadá","St John's":"Antigua y Barbuda","St Malo":"Francia","St Thomas":"Islas Vírgenes de EE. UU.","St Tropez":"Francia","Stavanger":"Noruega","Stewart Island":"Nueva Zelanda","Stikine Icecap":"Estados Unidos","Stockholm":"Suecia","Storfjorden":"Noruega","Stornoway":"Escocia","Strasbourg":"Francia","Straubing":"Alemania","Stromboli":"Italia","Sullivan Bay":"Ecuador","Sun Peaks, British Columbia":"Canadá","Surabaya":"Indonesia","Suva":"Fiyi","Svolvaer":"Noruega","Sydney":"Australia","Sydney, White Bay":"Australia","Syros":"Grecia","Szczecin":"Polonia","Taiohae":"Polinesia Francesa","Takamatsu":"Japón","Talkeetna":"Estados Unidos","Tallinn":"Estonia","Tampa":"Estados Unidos","Tangier":"Marruecos","Taranto":"Italia","Tarragona":"España","Tauranga":"Nueva Zelanda","Tenerife":"España","The Beach Club at Bimini":"Bahamas","Thessaloniki":"Grecia","Tianjin":"China","Tilbury":"Reino Unido","Toba":"Japón","Tobago":"Trinidad y Tobago","Tobermory":"Reino Unido","Tokushima":"Japón","Tokyo":"Japón","Topolobampo":"México","Torshavn":"Islas Feroe","Tortola":"Islas Vírgenes Británicas","Toulon":"Francia","Townsville":"Australia","Toyama":"Japón","Tracy Arm Fjord":"Estados Unidos","Trapani":"Italia","Trieste":"Italia","Trinidad":"Trinidad y Tobago","Trois Rivieres":"Canadá","Tromso":"Noruega","Trondheim":"Noruega","Tsuruga":"Japón","Tulln":"Austria","Turku":"Finlandia","Ullapool":"Escocia","Urubamba":"Perú","Ushuaia":"Argentina","Valdez":"Estados Unidos","Valencia":"España","Valletta":"Malta","Vancouver":"Canadá","Venice":"Italia","Veracruz":"México","Victoria":"Canadá","Vienna":"Austria","Vigo":"España","Vik":"Noruega","Villefranche":"Francia","Vilshofen":"Alemania","Virgin Gorda":"Islas Vírgenes Británicas","Visby":"Suecia","Volos":"Grecia","Waitangi":"Nueva Zelanda","Wakayama":"Japón","Walvis Bay":"Namibia","Warnemunde":"Alemania","Waterford":"Irlanda","Wellington":"Nueva Zelanda","Whangarei":"Nueva Zelanda","Whistler":"Canadá","Whittier":"Estados Unidos","Wilhelmina Bay":"Antártida","Willemstad (Curacao)":"Antillas Neerlandesas","Willis Island":"Australia","Wismar":"Alemania","Wrangell":"Estados Unidos","Wurzburg":"Alemania","Yampi Sound":"Australia","Yangon (Rangoon)":"Birmania (Myanmar)","Yatsushiro":"Japón","Yeosu":"Corea del Sur","Yokohama":"Japón","Yorkeys Knob":"Australia","Zadar":"Croacia","Zakynthos":"Grecia","Zeebrugge (Bruges)":"Bélgica"};
+const ALL_PORT_COUNTRY=Object.assign({},PCTRY,PORT_COUNTRY);
+function continentsList(){return[...new Set(Object.values(CONTINENT))].sort((a,b)=>a.localeCompare(b,'es'))}
+function countriesByContinent(ct){return Object.keys(CONTINENT).filter(c=>CONTINENT[c]===ct).sort((a,b)=>a.localeCompare(b,'es'))}
+function portsByCountry(ct){return Object.keys(ALL_PORT_COUNTRY).filter(p=>ALL_PORT_COUNTRY[p]===ct).sort((a,b)=>a.localeCompare(b,'es'))}
+const CONT_ICON={"Europa":"🏛️","Norteamérica":"🗽","Centroamérica":"🌋","Caribe":"🏝️","Sudamérica":"🌎","África":"🦁","Asia":"🏯","Oceanía":"🏄","Antártida":"🧊"};
+const D=window.CW_DATA;
+const $=id=>document.getElementById(id);
+const SHIPS_BY_LINE={};D.cruises.forEach(c=>{if(!c.line||!c.ship)return;(SHIPS_BY_LINE[c.line]=SHIPS_BY_LINE[c.line]||new Set()).add(c.ship)});
+const nf=new Intl.NumberFormat("de-DE",{minimumFractionDigits:2,maximumFractionDigits:2});
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const fx=()=>D.settings.fx||1;
+const last=c=>(c.history||[])[c.history.length-1]||{};
+const prev=c=>{const h=c.history||[];return h.length>1?h[h.length-2]:null};
+const M=(u,e)=>u==null&&e==null?"—":S.cur==="EUR"?nf.format(e!=null?e:u/fx())+" €":nf.format(u)+" $";
+const CV=u=>u==null?null:S.cur==="EUR"?u/fx():u;
+const easter=y=>{const a=y%19,b=Math.floor(y/100),c=y%100,d=Math.floor(b/4),e=b%4,f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3),h=(19*a+b-d-g+15)%30,i=Math.floor(c/4),k=c%4,l=(32+2*e+2*i-h-k)%7,m=Math.floor((a+11*h+22*l)/451),mo=Math.floor((h+l-7*m+114)/31),da=(h+l-7*m+114)%31+1;return new Date(Date.UTC(y,mo-1,da))};
+const HC={};function hol(y){if(HC[y])return HC[y];const e=easter(y),add=(n)=>new Date(e.getTime()+n*864e5).toISOString().slice(0,10);const h={};h[`${y}-01-01`]="Año Nuevo";h[add(-2)]="Viernes Santo";h[add(1)]="Lunes de Pascua";h[`${y}-05-01`]="Día del Trabajo";h[add(39)]="Ascensión";h[add(50)]="Lunes de Pentecostés";h[`${y}-10-03`]="Día de la Unidad Alemana";h[`${y}-12-25`]="Navidad";h[`${y}-12-26`]="San Esteban";(D.settings.extraHolidays||[]).forEach(x=>{const[dd,n]=x;if(dd.startsWith(String(y)))h[dd]=n});return HC[y]=h}
+const dinfo=iso=>{const d=new Date(iso+"T12:00:00Z"),w=d.getUTCDay(),h=hol(d.getUTCFullYear())[iso];return{w:WD[w],we:w===0||w===6,hol:h,txt:iso.split("-").reverse().join(".")}};
+const wdChip=iso=>{const i=dinfo(iso);return`<span class="wd${i.hol?" hol":i.we?" we":""}"${i.hol?` title="${esc(i.hol)}"`:""}>${i.w}</span>`};
+const dateCell=(iso,port)=>`<div class="dt"><span>${wdChip(iso)}<span class="num">${dinfo(iso).txt}</span></span><span class="sub">${esc(port)}</span></div>`;
+function countryCities(c){
+  const out=[],idx={};
+  const push=(country,city)=>{if(!country||!city)return;if(!(country in idx)){idx[country]=out.length;out.push({country,cities:[]})}const g=out[idx[country]];if(!g.cities.includes(city))g.cities.push(city)};
+  if(c.days&&c.days.length)c.days.forEach(d=>{if(!isSeaStop(d.port))push(d.country,d.port)});
+  else(c.ports||[]).forEach(p=>{if(!isSeaStop(p))push(PCTRY[p],p)});
+  if(!out.length){const dc=c.depCountry,ac=c.arrCountry;if(dc)push(dc,c.dep.port);if(ac&&ac!==dc)push(ac,c.arr.port)}
+  return out
+}
+const countries=c=>countryCities(c).map(g=>g.country);
+function businessDays(c){let n=0,cur=new Date(c.dep.date+"T12:00:00Z");const end=new Date(c.arr.date+"T12:00:00Z");while(cur<=end){const i=dinfo(cur.toISOString().slice(0,10));if(!i.we&&!i.hol)n++;cur.setUTCDate(cur.getUTCDate()+1)}return n}
+const isSeaStop=p=>/^(cruising|at sea|crossing|scenic cruising)/i.test(p);
+function routeMap(c){
+  const pts=(c.ports&&c.ports.length?c.ports:[c.dep.port,c.arr.port]).map(p=>({name:p,c:PC[p],sea:isSeaStop(p)}));
+  const known=pts.filter(p=>p.c);
+  if(known.length<1)return'<div class="map"><div class="empty" style="padding:24px">Mapa no disponible para este crucero</div></div>';
+  const xs=known.map(p=>p.c[1]*MK),ys=known.map(p=>-p.c[0]*MK);
+  let x0=Math.min(...xs),x1=Math.max(...xs),y0=Math.min(...ys),y1=Math.max(...ys);
+  const padX=Math.max((x1-x0)*0.2,16),padY=Math.max((y1-y0)*0.28,16);
+  x0-=padX;x1+=padX;y0-=padY;y1+=padY;let w=x1-x0,h=y1-y0;
+  if(w<40){x0-=20;w+=40}if(h<40){y0-=20;h+=40}
+  const line=known.map((p,i)=>`${i?"L":"M"}${(p.c[1]*MK).toFixed(1)},${(-p.c[0]*MK).toFixed(1)}`).join(" ");
+  const dots=known.map((p,i)=>{
+    const px=(p.c[1]*MK).toFixed(1),py=(-p.c[0]*MK).toFixed(1);
+    const isStart=i===0,isEnd=i===known.length-1&&known.length>1;
+    const r=p.sea?2.6:(isStart||isEnd?6:4);
+    const fill=p.sea?"var(--ink-3)":isStart?"var(--green)":isEnd?"var(--coral)":"var(--sky-ink)";
+    const dy=p.sea?0:(i%2===0?-10:15);
+    return`<circle cx="${px}" cy="${py}" r="${r}" fill="${fill}" stroke="var(--panel)" stroke-width="1.3"/>`+
+      (p.sea?"":`<text x="${px}" y="${(+py+dy).toFixed(1)}" class="pmlbl" text-anchor="middle">${esc(p.name.split("(")[0].trim())}</text>`)
+  }).join("");
+  return`<div class="map"><svg viewBox="${x0.toFixed(1)} ${y0.toFixed(1)} ${w.toFixed(1)} ${h.toFixed(1)}" preserveAspectRatio="xMidYMid meet" class="rmap">
+${WORLD_LAND.map(d=>`<path d="${d}" class="land"/>`).join("")}
+<path d="${line}" class="route"/>${dots}
+</svg><div class="cap">Mapa generado a partir de las paradas del itinerario (no es la imagen de iCruise)</div></div>`
+}
+
+/* ---------------- persistent personal state (localStorage) ---------------- */
+function lsGet(k,fb){try{const v=localStorage.getItem(k);return v==null?fb:JSON.parse(v)}catch(e){return fb}}
+function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){warnStorageFull(k,e);return false}}
+let storageWarnShown=false;
+function warnStorageFull(k,e){
+if(storageWarnShown)return;storageWarnShown=true;
+console.error("No se pudo guardar en el navegador ("+k+"):",e);
+const msg="⚠️ No se pudo guardar: el navegador no tiene más espacio disponible para esta app (frecuente cuando se comparte con otras herramientas locales). Este cambio puede no haberse guardado.\n\nUsa el botón ⬇ Exportar ahora mismo para no perder nada, y luego prueba en otro navegador o borra fotos antiguas para liberar espacio.";
+alert(msg);
+}
+const DEFAULT_CATS=[
+  {id:"cat-s69",name:"Super offer 6-9 noches",filter:{nightsMin:6,nightsMax:9,priceMax:600,priceCurrency:"EUR"}},
+  {id:"cat-s1012",name:"Super offer 10-12 noches",filter:{nightsMin:10,nightsMax:12,priceMax:800,priceCurrency:"EUR"}},
+  {id:"cat-s13",name:"Super offer 13+ noches",filter:{nightsMin:13,priceMax:1000,priceCurrency:"USD"}},
+  {id:"cat-alaska",name:"Alaska",filter:{ports:["Juneau","Ketchikan","Skagway","Sitka","Icy Strait Point","Glacier Bay","Hubbard Glacier","Tracy Arm Fjord","Haines","Seward","Whittier","Endicott Arm","College Fjord","Wrangell"]}},
+  {id:"cat-sa",name:"Sudamérica",filter:{countries:["Argentina","Uruguay","Brasil","Chile","Perú","Ecuador","Colombia"]}},
+  {id:"cat-greek",name:"Islas griegas",filter:{countries:["Grecia"]}},
+  {id:"cat-de",name:"Alemania",filter:{countries:["Alemania"],roundtripOnly:true}}
+];
+let CATS=lsGet("cw-categories",null);
+if(!CATS){CATS=DEFAULT_CATS;lsSet("cw-categories",CATS)}
+let SAVED=new Set(lsGet("cw-saved",[]));
+let MYC=lsGet("cw-mycruises",[]);
+let PEOPLE=lsGet("cw-people",[]);
+let MCOPEN=new Set();
+const PALETTE=["var(--sea)","var(--coral)","var(--sun)","var(--violet)","var(--green)","var(--sky-ink)"];
+const paletteColor=i=>PALETTE[((i%PALETTE.length)+PALETTE.length)%PALETTE.length];
+function persistCats(){lsSet("cw-categories",CATS)}
+function persistSaved(){lsSet("cw-saved",[...SAVED])}
+function persistMYC(){lsSet("cw-mycruises",MYC)}
+function persistPeople(){lsSet("cw-people",PEOPLE)}
+function personLabel(p){if(!p)return"";const loc=[p.city,p.country].filter(Boolean).join(", ");return`${p.name||"(sin nombre)"}${loc?` — ${loc}`:""}`}
+function personChipInner(p){return`${p.country?flagTag(p.country)+" ":""}${esc(personLabel(p))}`}
+function compressImageFile(file,maxDim,quality){maxDim=maxDim||1000;quality=quality||0.72;
+return new Promise((resolve,reject)=>{const reader=new FileReader();
+reader.onload=()=>{const img=new Image();img.onload=()=>{let w=img.width,h=img.height;
+if(w>maxDim||h>maxDim){if(w>h){h=Math.round(h*maxDim/w);w=maxDim}else{w=Math.round(w*maxDim/h);h=maxDim}}
+const canvas=document.createElement("canvas");canvas.width=w;canvas.height=h;
+canvas.getContext("2d").drawImage(img,0,0,w,h);
+try{resolve(canvas.toDataURL("image/jpeg",quality))}catch(e){reject(e)}};
+img.onerror=reject;img.src=reader.result};
+reader.onerror=reject;reader.readAsDataURL(file)})}
+const todayISO=()=>new Date().toISOString().slice(0,10);
+const isFlag=c=>SAVED.has(c.id);
+function toggleSaved(id){SAVED.has(id)?SAVED.delete(id):SAVED.add(id);persistSaved()}
+
+/* ---------------- reusable continent/country/port pickers ---------------- */
+function countryPickerHTML(prefix,label){
+  return`<div class="frow">
+  <label class="fld">Continente<select id="${prefix}-cont"><option value="">Elegir…</option>${continentsList().map(c=>`<option>${esc(c)}</option>`).join("")}</select></label>
+  <label class="fld grow">${esc(label||"País")}<select id="${prefix}-ctry"><option value="">Elige un continente primero</option></select></label>
+  <button class="btn" id="${prefix}-add" type="button" style="align-self:flex-end">+ Añadir</button>
+  </div><div class="chips" id="${prefix}-chips"></div>`
+}
+function wireCountryPicker(prefix,list,onChange){
+  const contSel=$(prefix+"-cont"),ctrySel=$(prefix+"-ctry");
+  contSel.onchange=()=>{const cs=countriesByContinent(contSel.value);ctrySel.innerHTML=(cs.length?'<option value="">Elegir…</option>':'<option value="">—</option>')+cs.map(c=>`<option>${esc(c)}</option>`).join("")};
+  const renderChips=()=>{$(prefix+"-chips").innerHTML=list.map((c,i)=>`<span class="chip">${flagTag(c)} ${esc(c)} <button type="button" data-rm="${i}">✕</button></span>`).join("")||'<span class="sub">Ninguno elegido (si no agregas ninguno, no filtra por país)</span>';$(prefix+"-chips").querySelectorAll("[data-rm]").forEach(b=>b.onclick=()=>{list.splice(+b.dataset.rm,1);renderChips();onChange&&onChange()})};
+  $(prefix+"-add").onclick=()=>{const v=ctrySel.value;if(v&&!list.includes(v)){list.push(v);renderChips();onChange&&onChange()}};
+  renderChips()
+}
+function portPickerHTML(prefix,manualLabel){
+  return`<div class="frow">
+  <label class="fld">Continente<select id="${prefix}-cont"><option value="">Elegir…</option>${continentsList().map(c=>`<option>${esc(c)}</option>`).join("")}</select></label>
+  <label class="fld grow">País<select id="${prefix}-ctry"><option value="">Elige un continente primero</option></select></label>
+  <label class="fld grow">Puerto<select id="${prefix}-port"><option value="">Elige un país primero</option></select></label>
+  <button class="btn" id="${prefix}-add" type="button" style="align-self:flex-end">+ Añadir</button>
+  </div>
+  <div class="frow"><label class="fld grow">${esc(manualLabel||"O escribe un puerto manualmente (si no aparece en la lista)")}<input id="${prefix}-manual" placeholder="Nombre del puerto"></label><button class="btn ghost" id="${prefix}-addmanual" type="button" style="align-self:flex-end">+ Añadir manual</button></div>
+  <div class="chips" id="${prefix}-chips"></div>`
+}
+function wirePortPicker(prefix,list,onChange){
+  const contSel=$(prefix+"-cont"),ctrySel=$(prefix+"-ctry"),portSel=$(prefix+"-port");
+  contSel.onchange=()=>{const cs=countriesByContinent(contSel.value);ctrySel.innerHTML=(cs.length?'<option value="">Elegir…</option>':'<option value="">—</option>')+cs.map(c=>`<option>${esc(c)}</option>`).join("");portSel.innerHTML='<option value="">Elige un país primero</option>'};
+  ctrySel.onchange=()=>{const ps=portsByCountry(ctrySel.value);portSel.innerHTML=(ps.length?'<option value="">Elegir…</option>':'<option value="">Sin puertos conocidos, usa el manual</option>')+ps.map(p=>`<option>${esc(p)}</option>`).join("")};
+  const renderChips=()=>{$(prefix+"-chips").innerHTML=list.map((p,i)=>`<span class="chip">${flagTag(ALL_PORT_COUNTRY[p]||"")} ${esc(p)} <button type="button" data-rm="${i}">✕</button></span>`).join("")||'<span class="sub">Ninguno elegido</span>';$(prefix+"-chips").querySelectorAll("[data-rm]").forEach(b=>b.onclick=()=>{list.splice(+b.dataset.rm,1);renderChips();onChange&&onChange()})};
+  $(prefix+"-add").onclick=()=>{const v=portSel.value;if(v&&!list.includes(v)){list.push(v);renderChips();onChange&&onChange()}};
+  $(prefix+"-addmanual").onclick=()=>{const v=$(prefix+"-manual").value.trim();if(v&&!list.includes(v)){list.push(v);$(prefix+"-manual").value="";renderChips();onChange&&onChange()}};
+  renderChips()
+}
+function simpleListPickerHTML(prefix,label,options){
+  return`<div class="frow">
+  <label class="fld grow">${esc(label)}<select id="${prefix}-sel"><option value="">Elegir…</option>${options.map(o=>`<option>${esc(o)}</option>`).join("")}</select></label>
+  <button class="btn" id="${prefix}-add" type="button" style="align-self:flex-end">+ Añadir</button>
+  </div><div class="chips" id="${prefix}-chips"></div>`
+}
+function wireSimpleListPicker(prefix,list,onChange){
+  const sel=$(prefix+"-sel");
+  const renderChips=()=>{$(prefix+"-chips").innerHTML=list.map((v,i)=>`<span class="chip">${esc(v)} <button type="button" data-rm="${i}">✕</button></span>`).join("")||'<span class="sub">Ninguno elegido (si no agregas ninguno, no filtra)</span>';$(prefix+"-chips").querySelectorAll("[data-rm]").forEach(b=>b.onclick=()=>{list.splice(+b.dataset.rm,1);renderChips();onChange&&onChange()})};
+  $(prefix+"-add").onclick=()=>{const v=sel.value;if(v&&!list.includes(v)){list.push(v);renderChips();onChange&&onChange()}};
+  renderChips()
+}
+function dateRangesHTML(prefix){return`<div id="${prefix}-rows"></div><button class="btn ghost" id="${prefix}-add" type="button">+ Añadir rango de fechas</button>`}
+function wireDateRanges(prefix,ranges,onChange){
+  const renderRows=()=>{$(prefix+"-rows").innerHTML=ranges.map((r,i)=>`<div class="frow">
+    <label class="fld">Desde<input data-dr-from="${i}" type="date" value="${r.from||""}"></label>
+    <label class="fld">Hasta<input data-dr-to="${i}" type="date" value="${r.to||""}"></label>
+    <button class="btn ghost" type="button" data-dr-rm="${i}">✕ Quitar</button>
+    </div>`).join("")||'<span class="sub">Ningún rango agregado (si no agregas ninguno, no filtra por fecha)</span>';
+    $(prefix+"-rows").querySelectorAll("[data-dr-from]").forEach(inp=>inp.onchange=()=>{ranges[+inp.dataset.drFrom].from=inp.value;onChange&&onChange()});
+    $(prefix+"-rows").querySelectorAll("[data-dr-to]").forEach(inp=>inp.onchange=()=>{ranges[+inp.dataset.drTo].to=inp.value;onChange&&onChange()});
+    $(prefix+"-rows").querySelectorAll("[data-dr-rm]").forEach(b=>b.onclick=()=>{ranges.splice(+b.dataset.drRm,1);renderRows();onChange&&onChange()})};
+  $(prefix+"-add").onclick=()=>{ranges.push({from:"",to:""});renderRows()};
+  renderRows()
+}
+
+function catMatch(c,f){
+  f=f||{};
+  const lines=(f.lines&&f.lines.length)?f.lines:(f.line?[f.line]:[]);
+  if(lines.length&&!lines.includes(c.line))return false;
+  if(f.ships&&f.ships.length&&!f.ships.includes(c.ship))return false;
+  if(f.shipText){if(!c.ship.toLowerCase().includes(f.shipText.toLowerCase()))return false}
+  if(f.nightsMin!=null&&f.nightsMin!==""&&c.nights<+f.nightsMin)return false;
+  if(f.nightsMax!=null&&f.nightsMax!==""&&c.nights>+f.nightsMax)return false;
+  if(f.priceMax!=null&&f.priceMax!==""){const p=last(c);if(p.usd==null)return false;const val=f.priceCurrency==="EUR"?(p.eur!=null?p.eur:p.usd/fx()):p.usd;if(val>+f.priceMax)return false}
+  if(f.priceDayMax!=null&&f.priceDayMax!==""){const p=last(c);if(p.usd==null||!c.nights)return false;const val=(f.priceCurrency==="EUR"?(p.eur!=null?p.eur:p.usd/fx()):p.usd)/c.nights;if(val>+f.priceDayMax)return false}
+  {const ranges=(f.dateRanges&&f.dateRanges.length)?f.dateRanges.filter(r=>r.from||r.to):((f.fromDate||f.toDate)?[{from:f.fromDate,to:f.toDate}]:[]);
+  if(ranges.length){const d=c.dep.date;const ok=ranges.some(r=>(!r.from||d>=r.from)&&(!r.to||d<=r.to));if(!ok)return false}}
+  if(f.weekendOnly){const i=dinfo(c.dep.date);if(!i.we&&!i.hol)return false}
+  if(f.roundtripOnly&&c.dep.port!==c.arr.port)return false;
+  if(f.builtMin!=null&&f.builtMin!==""){const by=parseInt(c.built,10);if(!by||by<+f.builtMin)return false}
+  if(f.depPorts&&f.depPorts.length&&!f.depPorts.includes(c.dep.port))return false;
+  if(f.arrPorts&&f.arrPorts.length&&!f.arrPorts.includes(c.arr.port))return false;
+  if(f.depCountries&&f.depCountries.length){const dc=ALL_PORT_COUNTRY[c.dep.port]||c.depCountry;if(!dc||!f.depCountries.includes(dc))return false}
+  if(f.arrCountries&&f.arrCountries.length){const ac=ALL_PORT_COUNTRY[c.arr.port]||c.arrCountry;if(!ac||!f.arrCountries.includes(ac))return false}
+  if(f.countries&&f.countries.length){const cs=countries(c);if(!f.countries.some(x=>cs.includes(x)))return false}
+  if(f.ports&&f.ports.length){const allp=((c.days&&c.days.length?c.days.map(d=>d.port):c.ports)||[]).map(p=>String(p).toLowerCase());if(!f.ports.some(x=>allp.some(p=>p.includes(String(x).toLowerCase()))))return false}
+  if(f.titleText){if(!(c.title||"").toLowerCase().includes(f.titleText.toLowerCase()))return false}
+  if(f.excludeQ){const hay=[c.ship,c.line,c.title,c.dep.port,c.arr.port,...(c.ports||[]),...countries(c)].join(" ").toLowerCase();if(hay.includes(f.excludeQ.toLowerCase()))return false}
+  if(f.q){const hay=[c.ship,c.line,c.title,c.dep.port,c.arr.port,...(c.ports||[]),...countries(c)].join(" ").toLowerCase();if(!hay.includes(f.q.toLowerCase()))return false}
+  return true
+}
+function categoriesForCruise(c){return CATS.filter(cat=>catMatch(c,cat.filter)).map(cat=>cat.name)}
+function catSummary(f){f=f||{};const parts=[];
+  if(f.nightsMin||f.nightsMax)parts.push(`${f.nightsMin||"0"}–${f.nightsMax||"∞"} noches`);
+  if(f.priceMax)parts.push(`máx. ${f.priceMax} ${f.priceCurrency==="EUR"?"€":"$"} /persona`);
+  if(f.priceDayMax)parts.push(`máx. ${f.priceDayMax} ${f.priceCurrency==="EUR"?"€":"$"} /persona/noche`);
+  {const lines=(f.lines&&f.lines.length)?f.lines:(f.line?[f.line]:[]);if(lines.length)parts.push("naviera: "+lines.join(", "))}
+  if(f.ships&&f.ships.length)parts.push("barco: "+f.ships.join(", "));
+  if(f.shipText)parts.push(`barco contiene: "${f.shipText}"`);
+  if(f.depPorts&&f.depPorts.length)parts.push("salida desde: "+f.depPorts.join(", "));
+  if(f.arrPorts&&f.arrPorts.length)parts.push("llegada a: "+f.arrPorts.join(", "));
+  if(f.depCountries&&f.depCountries.length)parts.push("país de salida: "+f.depCountries.join(", "));
+  if(f.arrCountries&&f.arrCountries.length)parts.push("país de llegada: "+f.arrCountries.join(", "));
+  if(f.countries&&f.countries.length)parts.push("países parada: "+f.countries.join(", "));
+  if(f.ports&&f.ports.length)parts.push("puertos parada: "+f.ports.join(", "));
+  if(f.titleText)parts.push(`nombre del viaje incluye "${f.titleText}"`);
+  if(f.q)parts.push(`incluye "${f.q}"`);
+  if(f.excludeQ)parts.push(`excluye "${f.excludeQ}"`);
+  {const ranges=(f.dateRanges&&f.dateRanges.length)?f.dateRanges.filter(r=>r.from||r.to):((f.fromDate||f.toDate)?[{from:f.fromDate,to:f.toDate}]:[]);if(ranges.length)parts.push(ranges.map(r=>`${r.from||"…"} → ${r.to||"…"}`).join(" / "))}
+  if(f.weekendOnly)parts.push("fin de semana/festivo");
+  if(f.roundtripOnly)parts.push("ida y vuelta mismo puerto");
+  if(f.builtMin)parts.push(`barco construido ≥ ${f.builtMin}`);
+  return parts.length?parts.join(" · "):"Sin filtros (coincide con todos los cruceros)"
+}
+
+/* ---------------- ship / port ratings derived from Mis Cruceros ---------------- */
+function normPort(p){return String(p||"").trim().toLowerCase()}
+function normShip(s){return String(s||"").trim().toLowerCase()}
+function pastEntries(){return MYC.filter(m=>m.arrDate&&m.arrDate<todayISO())}
+function futureEntries(){return MYC.filter(m=>!m.arrDate||m.arrDate>=todayISO())}
+function entryPorts(m){if(m.days&&m.days.length)return m.days.map(d=>d.port).filter(Boolean);const out=[];if(m.depPort)out.push(m.depPort);(m.ports||[]).forEach(p=>out.push(p));if(m.arrPort)out.push(m.arrPort);return out}
+function shipRatingStats(){const map={};pastEntries().forEach(m=>{if(!m.ship)return;const r=m.ratings||{};const vals=["ship","food","entertainment","sport"].map(k=>r[k]).filter(v=>v>0);if(!vals.length)return;const avg=vals.reduce((a,b)=>a+b,0)/vals.length;const k=normShip(m.ship);(map[k]=map[k]||{name:m.ship,sum:0,n:0}).sum+=avg;map[k].n++});return map}
+function shipRating(ship){const map=shipRatingStats()[normShip(ship)];return map?map.sum/map.n:null}
+function portRatingStats(){const map={};pastEntries().forEach(m=>{const pr=m.portRatings||{};Object.keys(pr).forEach(p=>{if(!pr[p])return;const k=normPort(p);(map[k]=map[k]||{name:p,sum:0,n:0}).sum+=pr[p];map[k].n++})});return map}
+function portRating(port){const map=portRatingStats()[normPort(port)];return map?{avg:map.sum/map.n,n:map.n}:null}
+function portVisitCount(port){const k=normPort(port);let n=0;pastEntries().forEach(m=>{entryPorts(m).forEach(p=>{if(normPort(p)===k)n++})});return n}
+function starsHTML(val,id,ro){const v=Math.round(val||0);let h=`<span class="stars${ro?" ro":""}" data-rate="${id||""}">`;for(let i=1;i<=5;i++)h+=`<button data-v="${i}" class="${i<=v?"on":""}" ${ro?"disabled":""}>★</button>`;return h+"</span>"}
+
+/* ---------------- top-level state ---------------- */
+const S={cur:"USD",sec:"buscar",subBuscar:"todos",subMis:"resumen",page:0,sort:{k:"dep",dir:1},open:new Set()};
+const CS={catId:null,page:0,sort:{k:"dep",dir:1}};
+
+/* ---------------- TODOS / GUARDADOS table (shared) ---------------- */
+function baseList(){return S.subBuscar==="guardados"?D.cruises.filter(isFlag):D.cruises}
+function lineOptions(){const ls=[...new Set(D.cruises.map(c=>c.line))].sort();$("f-line").innerHTML='<option value="">Todas</option>'+ls.map(l=>`<option>${esc(l)}</option>`).join("")}
+function sortList(list,sort){return list.slice().sort((a,b)=>{const k=sort.k,d=sort.dir,v=x=>k==="ship"?x.line+x.ship:k==="dep"?x.dep.date:k==="arr"?x.arr.date:k==="nights"?x.nights:k==="usd"?last(x).usd??1e9:(last(x).usd??1e9)/x.nights;const A=v(a),B=v(b);return(A>B?1:A<B?-1:0)*d})}
+function filtered(){const q=$("f-q").value.trim().toLowerCase(),line=$("f-line").value,nmin=+$("f-nmin").value||0,nmax=+$("f-nmax").value||0,pmax=+$("f-pmax").value||0,from=$("f-from").value,to=$("f-to").value,we=$("f-we").checked;
+return sortList(baseList().filter(c=>{const p=last(c);
+if(line&&c.line!==line)return false;if(nmin&&c.nights<nmin)return false;if(nmax&&c.nights>nmax)return false;
+if(pmax&&p.usd!=null&&CV(p.usd)>pmax)return false;if(from&&c.dep.date<from)return false;if(to&&c.dep.date>to)return false;
+if(we){const i=dinfo(c.dep.date);if(!i.we&&!i.hol)return false}
+if(q){const hay=[c.ship,c.line,c.title,c.dep.port,c.arr.port,...(c.ports||[]),...countries(c)].join(" ").toLowerCase();if(!hay.includes(q))return false}
+return true}),S.sort)}
+function delta(c){const p=prev(c),l=last(c);if(!p||l.usd==null||p.usd==null)return'<span class="sub">Primera vez</span>';const d=l.usd-p.usd;if(!d)return'<span class="sub">Sin cambio</span>';return`<span class="num ${d<0?"down":"up"}">${d<0?"▼":"▲"} ${M(Math.abs(d),S.cur==="EUR"&&l.eur!=null&&p.eur!=null?Math.abs(l.eur-p.eur):null)}<br>${nf.format(d/p.usd*100)} %</span>`}
+function pills(c){let h=categoriesForCruise(c).map(n=>`<span class="pill p-cat">${esc(n)}</span>`).join("");
+if(isFlag(c))h+='<span class="pill p-flag">Guardado</span>';if(c.priceFrom)h+='<span class="pill p-warn">Precio desde</span>';return h}
+function days(c){const f=x=>x?x.slice(0,5):"";
+const portInfo=(name,country,sea)=>{if(sea)return"";const vc=portVisitCount(name),pr=portRating(name);let h="";if(vc>0)h+=`<span class="badge-port">Visitado ×${vc}</span>`;if(pr)h+=`<span class="badge-star">★ ${pr.avg.toFixed(1)}</span>`;return h};
+if(c.days&&c.days.length)return'<ol class="days">'+c.days.map((d,i)=>{const di=dinfo(d.date),sea=/^at sea|^cruising|^crossing|^scenic cruising/i.test(d.port);const t=[d.arr?"llega "+f(d.arr):"",d.dep?"sale "+f(d.dep):""].filter(Boolean).join(" · ");
+return`<li class="${di.hol?"hol":di.we?"we":""}"><span class="dn">D${i+1}</span><span>${wdChip(d.date)}<span class="num">${di.txt}</span></span><span class="ds"><span class="line1">${sea?"<b>AT SEA</b>":`<b>${esc(d.port)}</b>`}${di.hol?` <span class="pill p-flag" style="margin:0">${esc(di.hol)}</span>`:""}<span class="flagr">${portInfo(d.port,d.country,sea)}${!sea&&d.country?flagTag(d.country):""}</span></span>${t?`<span class="t">${t}</span>`:""}</span></li>`}).join("")+"</ol>";
+return'<ol class="days">'+(c.ports||[]).map((p,i)=>{const sea=isSeaStop(p);return`<li><span class="dn">·</span><span class="sub">parada ${i+1}</span><span class="ds"><span class="line1">${sea?`<b>${esc(p.replace(/^Cruising /i,"Navegando: "))}</b>`:`<b>${esc(p)}</b>`}<span class="flagr">${portInfo(p,PCTRY[p],sea)}${!sea&&PCTRY[p]?flagTag(PCTRY[p]):""}</span></span></span></li>`}).join("")+'</ol><p class="note">Orden real de las paradas. Las fechas de cada escala y los días de navegación exactos no se han podido descargar todavía (iCruise bloquea esa página).</p>'}
+window.mapFallback=function(id){const c=D.cruises.find(x=>x.id===id);const el=document.getElementById("map-"+id);if(c&&el)el.outerHTML=routeMap(c)};
+function detail(c){const L=lc(c.line),cg=countryCities(c),off=L[2]?`https://www.${L[2]}`:null,bd=businessDays(c);const mn=Math.min(...(c.history||[]).map(h=>h.usd).filter(v=>v!=null));
+const hist=(c.history||[]).slice().reverse().map(h=>`<tr><td class="num">${h.date.split("-").reverse().join(".")}</td><td class="r num">${M(h.usd,h.eur)}</td><td class="r num">${M(h.usd!=null?h.usd*2:null,h.eur!=null?h.eur*2:null)}</td></tr>`).join("");
+const sr=shipRating(c.ship);
+return`<tr class="detail" style="--lc:${L[1]}"><td colspan="10"><div class="dgrid">
+<div><h3>Ruta</h3>${c.map?`<div class="map" id="map-${esc(c.id)}"><img src="${esc(c.map)}" alt="Mapa de la ruta" loading="lazy" onerror="mapFallback('${esc(c.id)}')"><div class="cap">Mapa: iCruise</div></div>`:routeMap(c)}
+<h3 style="margin-top:14px">Países</h3><div class="ctrygrp">${cg.length?cg.map(g=>`<div class="g"><span class="flagc">${flagTag(g.country)}</span><div><div class="cname">${esc(g.country)}</div><div class="clist">${g.cities.map(esc).join(" · ")}</div></div></div>`).join(""):'<span class="sub">Sin dato</span>'}</div></div>
+<div><h3>Día a día · ${esc(c.title||"")}<span class="bizdays">${bd} días hábiles de ${c.nights+1}</span></h3>${days(c)}</div>
+<div><h3>Barco</h3><dl class="kv"><dt>Naviera</dt><dd class="shiphead">${L[3]?`<img class="llogo" src="${esc(L[3])}" alt="" onerror="this.remove()">`:""}${esc(c.line)}</dd><dt>Barco</dt><dd><b>${esc(c.ship)}</b>${off?` · <a href="${off}" target="_blank" rel="noopener">sitio oficial (${esc(L[2])}) ↗</a>`:""}${sr?` · <span class="shiprating">★ ${sr.toFixed(1)} (tu valoración)</span>`:""}</dd><dt>Construido</dt><dd class="num">${c.built||"—"}</dd><dt>Remodelado</dt><dd class="num">${c.refurb||"—"}</dd>${c.tonnage?`<dt>Tonelaje</dt><dd class="num">${esc(c.tonnage)}</dd>`:""}${c.capacity?`<dt>Pasajeros</dt><dd class="num">${esc(c.capacity)}</dd>`:""}<dt>Cabina</dt><dd>${esc(c.cabin||"—")}</dd></dl>
+${(c.promos||[]).length?`<p class="note"><b>Promociones:</b> ${c.promos.map(esc).join(" · ")}</p>`:""}
+<h3 style="margin-top:14px">Historial de precio</h3><table class="hist"><thead><tr><th>Revisión</th><th class="r">Por persona</th><th class="r">Dos personas</th></tr></thead><tbody>${hist}</tbody></table>
+<p class="note">Mínimo registrado: <span class="num">${M(isFinite(mn)?mn:null)}</span></p>
+<p style="margin:12px 0 0"><a class="btn book" href="${esc(c.url)}" target="_blank" rel="noopener">Reservar en iCruise ↗</a></p></div>
+</div></td></tr>`}
+function rowHTML(c){const L=lc(c.line),p=last(c),o=S.open.has(c.id),cg=countryCities(c),sr=shipRating(c.ship);
+return`<tr class="row" style="--lc:${L[1]}" data-rowid="${esc(c.id)}"><td><button class="flagbtn" data-flag="${c.id}" aria-pressed="${isFlag(c)}" title="Guardar crucero">⚑</button></td>
+<td><div class="rowwrap">${L[3]?`<img class="llogo-lg" src="${esc(L[3])}" alt="" onerror="this.remove()">`:""}<div class="rowtext"><div class="rowtitle">${esc(c.title||c.ship)}</div><div class="sub"><b>${esc(c.line)}</b> · ${esc(c.ship)}${sr?` · <span class="shiprating">★ ${sr.toFixed(1)}</span>`:""}</div>${cg.length?`<div class="ctrysum">${cg.map(g=>`<span title="${esc(g.country+": "+g.cities.join(", "))}">${flagTag(g.country)}</span>`).join("")}</div>`:""}<div>${pills(c)}</div></div></div></td>
+<td>${dateCell(c.dep.date,c.dep.port)}</td><td>${dateCell(c.arr.date,c.arr.port)}</td>
+<td class="r num">${c.nights}</td>
+<td class="r"><span class="price">${M(p.usd,p.eur)}</span></td>
+<td class="r"><span class="num">${M(p.usd!=null?p.usd*2:null,p.eur!=null?p.eur*2:null)}</span></td>
+<td class="r num">${M(p.usd!=null?p.usd/c.nights:null,p.eur!=null?p.eur/c.nights:null)}</td>
+<td class="r hide-sm" style="font-size:12px">${delta(c)}</td>
+<td style="white-space:nowrap"><a class="btn book" href="${esc(c.url)}" target="_blank" rel="noopener" title="Reservar en iCruise">Reservar</a> <span class="exp" aria-hidden="true">${o?"▾":"▸"}</span></td></tr>${o?detail(c):""}`}
+function wireRowEvents(tbody,onAfter){tbody.querySelectorAll("tr.row").forEach(tr=>tr.onclick=e=>{if(e.target.closest("[data-flag]")||e.target.closest("a.book"))return;const id=tr.dataset.rowid;S.open.has(id)?S.open.delete(id):S.open.add(id);onAfter()});
+tbody.querySelectorAll("[data-flag]").forEach(b=>b.onclick=e=>{e.stopPropagation();toggleSaved(b.dataset.flag);onAfter()})}
+function renderRows(){const list=filtered(),PS=100,pages=Math.max(1,Math.ceil(list.length/PS));if(S.page>=pages)S.page=pages-1;const shown=list.slice(S.page*PS,S.page*PS+PS);
+$("count").textContent=`${list.length.toLocaleString("de-DE")} cruceros`;
+$("pager").innerHTML=pages>1?`<button class="btn" id="pp"${S.page?"":" disabled"}>‹ Anterior</button><span class="num">${S.page+1} / ${pages}</span><button class="btn" id="pn"${S.page<pages-1?"":" disabled"}>Siguiente ›</button>`:"";
+if(pages>1){$("pp").onclick=()=>{S.page--;renderRows();scrollTo(0,0)};$("pn").onclick=()=>{S.page++;renderRows();scrollTo(0,0)}}
+if(!list.length){$("rows").innerHTML=`<tr><td colspan="10" class="empty">${S.subBuscar==="guardados"?"Todavía no has guardado ningún crucero. Pulsa la ⚑ en una fila para guardarlo.":"Ningún crucero cumple estos filtros."}</td></tr>`;return}
+$("rows").innerHTML=shown.map(rowHTML).join("");
+wireRowEvents($("rows"),renderRows)}
+function banner(t){$("banner").textContent=t;$("banner").hidden=!t}
+
+/* ---------------- CATEGORÍAS ---------------- */
+function catCount(cat){return D.cruises.filter(c=>catMatch(c,cat.filter)).length}
+function catFlags(cat){const f=cat.filter||{};const cs=(f.countries&&f.countries.length)?f.countries:(f.ports&&f.ports.length?f.ports.map(p=>ALL_PORT_COUNTRY[p]).filter(Boolean):[]);return[...new Set(cs)].slice(0,4).map(c=>flagTag(c)).join("")}
+function renderCategorias(){$("cat-grid").innerHTML=CATS.map((cat,i)=>`<div class="catcard" style="--lc:${paletteColor(i)}"><h3>${esc(cat.name)}${catFlags(cat)?`<span class="flags">${catFlags(cat)}</span>`:""}</h3><span class="cnt">${catCount(cat).toLocaleString("de-DE")} cruceros</span><div class="desc">${esc(catSummary(cat.filter))}</div><div class="acts"><button class="btn primary" data-view="${cat.id}">Ver cruceros</button><button class="btn" data-edit="${cat.id}">Editar</button><button class="btn danger" data-del="${cat.id}">Borrar</button></div></div>`).join("")||'<div class="empty">Todavía no tienes categorías. Crea una con "+ Nueva categoría".</div>';
+$("cat-grid").querySelectorAll("[data-view]").forEach(b=>b.onclick=()=>openCatDetail(b.dataset.view));
+$("cat-grid").querySelectorAll("[data-edit]").forEach(b=>b.onclick=()=>openCatForm(CATS.find(c=>c.id===b.dataset.edit)));
+$("cat-grid").querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>{if(!confirm("¿Borrar esta categoría?"))return;CATS=CATS.filter(c=>c.id!==b.dataset.del);persistCats();renderCategorias()})}
+
+/* ---- categoría: vista de detalle (misma tabla que TODOS, pero solo los cruceros de la categoría, sin mezclar con los filtros de TODOS) ---- */
+function openCatDetail(catId){CS.catId=catId;CS.page=0;$("cat-list-view").hidden=true;$("cat-detail-view").hidden=false;renderCatRows()}
+function closeCatDetail(){CS.catId=null;$("cat-detail-view").hidden=true;$("cat-list-view").hidden=false;renderCategorias()}
+function renderCatRows(){const cat=CATS.find(x=>x.id===CS.catId);if(!cat){closeCatDetail();return}
+$("cat-detail-title").textContent=`Categoría: ${cat.name}`;
+const list=sortList(D.cruises.filter(c=>catMatch(c,cat.filter)),CS.sort),PS=100,pages=Math.max(1,Math.ceil(list.length/PS));if(CS.page>=pages)CS.page=pages-1;const shown=list.slice(CS.page*PS,CS.page*PS+PS);
+$("catcount").textContent=`${list.length.toLocaleString("de-DE")} cruceros en esta categoría`;
+$("catpager").innerHTML=pages>1?`<button class="btn" id="catpp"${CS.page?"":" disabled"}>‹ Anterior</button><span class="num">${CS.page+1} / ${pages}</span><button class="btn" id="catpn"${CS.page<pages-1?"":" disabled"}>Siguiente ›</button>`:"";
+if(pages>1){$("catpp").onclick=()=>{CS.page--;renderCatRows();scrollTo(0,0)};$("catpn").onclick=()=>{CS.page++;renderCatRows();scrollTo(0,0)}}
+$("catrows").innerHTML=shown.length?shown.map(rowHTML).join(""):'<tr><td colspan="10" class="empty">Ningún crucero cumple los filtros de esta categoría. Edítala para ampliarlos.</td></tr>';
+wireRowEvents($("catrows"),renderCatRows)}
+$("cat-detail-back").onclick=closeCatDetail;
+document.querySelectorAll('[data-tbl="cat"]').forEach(b=>b.onclick=()=>{const k=b.dataset.sort;CS.sort=CS.sort.k===k?{k,dir:-CS.sort.dir}:{k,dir:1};renderCatRows()});
+function closeModal(){$("modal-back").hidden=true;$("modal").innerHTML=""}
+function openLightbox(src,onBack,caption){$("modal").innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center">${onBack?'<button class="btn ghost" id="lb-back" type="button">← Volver a la galería</button>':"<span></span>"}<button class="btn ghost" id="lb-close" type="button">Cerrar ✕</button></div><img src="${src}" style="max-width:100%;max-height:70vh;border-radius:12px;display:block;margin:0 auto;object-fit:contain">${caption?`<div class="lb-caption">${esc(caption)}</div>`:""}`;$("modal-back").hidden=false;$("lb-close").onclick=closeModal;if(onBack)$("lb-back").onclick=onBack}
+function photoObjOf(x){return typeof x==="string"?{src:x,comment:""}:(x||{src:"",comment:""})}
+function allCruisePhotos(m){const out=[];(m.days||[]).forEach(d=>{if(d.photo){const ph=photoObjOf(d.photo);out.push({src:ph.src,comment:ph.comment||"",label:d.port?`${esc(d.port)} · ${fmtD(d.date)}`:fmtD(d.date)})}});(m.photos||[]).forEach(p=>{const ph=photoObjOf(p);out.push({src:ph.src,comment:ph.comment||"",label:"Galería"})});return out}
+function openGallery(m){const items=allCruisePhotos(m);
+$("modal").innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center"><h2 style="margin:0">Galería · ${esc(m.ship||"Crucero")}</h2><button class="btn ghost" id="gal-close" type="button">Cerrar ✕</button></div>
+<div class="gallerygrid">${items.map(it=>`<div class="galitem"><img src="${esc(it.src)}" alt="" data-lb="${esc(it.src)}" data-cap="${esc(it.comment||it.label)}"><span class="gcap">${it.label}</span>${it.comment?`<span class="gcap-comment">${esc(it.comment)}</span>`:""}</div>`).join("")||'<div class="empty">Sin fotos todavía.</div>'}</div>`;
+$("modal-back").hidden=false;$("gal-close").onclick=closeModal;
+$("modal").querySelectorAll("[data-lb]").forEach(img=>img.onclick=()=>openLightbox(img.dataset.lb,()=>openGallery(m),img.dataset.cap))}
+function openCatForm(existing){const f=(existing&&existing.filter)||{};
+const countriesArr=(f.countries||[]).slice(),portsArr=(f.ports||[]).slice();
+const depPortsArr=(f.depPorts||[]).slice(),arrPortsArr=(f.arrPorts||[]).slice();
+const depCountriesArr=(f.depCountries||[]).slice(),arrCountriesArr=(f.arrCountries||[]).slice();
+const linesInit=(f.lines&&f.lines.length)?f.lines.slice():(f.line?[f.line]:[]);
+const shipsArr=(f.ships||[]).slice();
+const dateRangesArr=(f.dateRanges&&f.dateRanges.length)?f.dateRanges.map(r=>({from:r.from||"",to:r.to||""})):((f.fromDate||f.toDate)?[{from:f.fromDate||"",to:f.toDate||""}]:[]);
+const allLines=[...new Set(D.cruises.map(c=>c.line))].filter(Boolean).sort();
+const allShips=[...new Set(D.cruises.map(c=>c.ship))].filter(Boolean).sort();
+const hd=t=>`<h3 style="margin:4px 0 0;font:700 12px var(--f-body);text-transform:uppercase;letter-spacing:.07em;color:var(--ink-2)">${t}</h3>`;
+$("modal").innerHTML=`<h2>${existing?"Editar categoría":"Nueva categoría"}</h2>
+<p class="note" style="margin:0">Una categoría es solo el conjunto de filtros que definas aquí abajo: no hay condiciones ocultas ni precargadas, todo lo que la categoría usa para filtrar es lo que rellenes en este formulario. Dejar un campo vacío significa que ese filtro no aplica.</p>
+<div class="frow"><label class="fld grow">Nombre<input id="cf-name" value="${esc((existing&&existing.name)||"")}"></label></div>
+<div class="frow">
+<label class="fld">Noches mín.<input id="cf-nmin" type="number" min="1" value="${f.nightsMin??""}"></label>
+<label class="fld">Noches máx.<input id="cf-nmax" type="number" min="1" value="${f.nightsMax??""}"></label>
+<label class="fld">Moneda<select id="cf-cur"><option value="USD" ${f.priceCurrency!=="EUR"?"selected":""}>USD $</option><option value="EUR" ${f.priceCurrency==="EUR"?"selected":""}>EUR €</option></select></label>
+</div>
+<div class="frow">
+<label class="fld">Precio máx./persona (total)<input id="cf-pmax" type="number" min="0" value="${f.priceMax??""}"></label>
+<label class="fld">Precio máx./persona/noche<input id="cf-pdaymax" type="number" min="0" value="${f.priceDayMax??""}"></label>
+<label class="fld">Barco construido desde<input id="cf-built" type="number" placeholder="año" value="${f.builtMin??""}"></label>
+</div>
+<div class="frow">
+<label class="fld grow">Barco contiene (texto libre)<input id="cf-ship" value="${esc(f.shipText||"")}" placeholder="p. ej. Seaview"></label>
+<label class="fld check"><input id="cf-we" type="checkbox" ${f.weekendOnly?"checked":""}>Fin de semana/festivo</label>
+<label class="fld check"><input id="cf-rt" type="checkbox" ${f.roundtripOnly?"checked":""}>Ida y vuelta mismo puerto</label>
+</div>
+<div class="frow">
+<label class="fld grow">Nombre del viaje contiene<input id="cf-title" value="${esc(f.titleText||"")}" placeholder="p. ej. CocoCay"></label>
+</div>
+<div class="frow">
+<label class="fld grow">Incluir texto (puerto, país, ruta)<input id="cf-q" value="${esc(f.q||"")}"></label>
+<label class="fld grow">Excluir texto<input id="cf-exq" value="${esc(f.excludeQ||"")}" placeholder="ocultar si contiene…"></label>
+</div>
+${hd("Navieras específicas (basta con una; vacío = todas)")}
+${simpleListPickerHTML("cf-lines","Naviera",allLines)}
+${hd("Barcos específicos (basta con uno; vacío = todos)")}
+${simpleListPickerHTML("cf-ships","Barco",allShips)}
+${hd("Rangos de fechas de zarpe (uno o varios; vacío = cualquier fecha)")}
+${dateRangesHTML("cf-dr")}
+${hd("Puerto de salida específico (basta con uno)")}
+${portPickerHTML("cf-dp")}
+${hd("Puerto de llegada específico (basta con uno)")}
+${portPickerHTML("cf-ap")}
+${hd("País de salida específico (basta con uno)")}
+${countryPickerHTML("cf-dc")}
+${hd("País de llegada específico (basta con uno)")}
+${countryPickerHTML("cf-ac")}
+${hd("Países que visite como parada (basta con uno)")}
+${countryPickerHTML("cf-ct")}
+${hd("Puertos que visite como parada (basta con uno)")}
+${portPickerHTML("cf-pt")}
+<div class="acts"><button class="btn ghost" id="cf-cancel">Cancelar</button><button class="btn primary" id="cf-save">Guardar</button></div>`;
+$("modal-back").hidden=false;
+wireSimpleListPicker("cf-lines",linesInit);
+wireSimpleListPicker("cf-ships",shipsArr);
+wireDateRanges("cf-dr",dateRangesArr);
+wirePortPicker("cf-dp",depPortsArr);
+wirePortPicker("cf-ap",arrPortsArr);
+wireCountryPicker("cf-dc",depCountriesArr);
+wireCountryPicker("cf-ac",arrCountriesArr);
+wireCountryPicker("cf-ct",countriesArr);
+wirePortPicker("cf-pt",portsArr);
+$("cf-cancel").onclick=closeModal;
+$("cf-save").onclick=()=>{const name=$("cf-name").value.trim();if(!name){alert("Ponle un nombre a la categoría");return}
+const filter={nightsMin:$("cf-nmin").value||null,nightsMax:$("cf-nmax").value||null,priceMax:$("cf-pmax").value||null,priceDayMax:$("cf-pdaymax").value||null,priceCurrency:$("cf-cur").value,lines:linesInit.slice(),ships:shipsArr.slice(),shipText:$("cf-ship").value.trim()||null,titleText:$("cf-title").value.trim()||null,builtMin:$("cf-built").value||null,q:$("cf-q").value.trim()||null,excludeQ:$("cf-exq").value.trim()||null,dateRanges:dateRangesArr.filter(r=>r.from||r.to).map(r=>({from:r.from||null,to:r.to||null})),weekendOnly:$("cf-we").checked,roundtripOnly:$("cf-rt").checked,depPorts:depPortsArr.slice(),arrPorts:arrPortsArr.slice(),depCountries:depCountriesArr.slice(),arrCountries:arrCountriesArr.slice(),countries:countriesArr.slice(),ports:portsArr.slice()};
+if(existing){existing.name=name;existing.filter=filter}else{CATS.push({id:"cat-"+Date.now(),name,filter})}
+persistCats();closeModal();renderCategorias();renderRows()}}
+$("cat-new").onclick=()=>openCatForm(null);
+
+/* ---------------- MIS CRUCEROS ---------------- */
+function fmtD(iso){return iso?iso.split("-").reverse().join("."):"—"}
+function nightsBetween(a,b){if(!a||!b)return null;return Math.round((new Date(b)-new Date(a))/864e5)}
+function datesBetween(a,b){if(!a||!b)return[];const out=[];let t=Date.UTC(+a.slice(0,4),+a.slice(5,7)-1,+a.slice(8,10));const end=Date.UTC(+b.slice(0,4),+b.slice(5,7)-1,+b.slice(8,10));while(t<=end){const d=new Date(t);out.push(d.getUTCFullYear()+"-"+String(d.getUTCMonth()+1).padStart(2,"0")+"-"+String(d.getUTCDate()).padStart(2,"0"));t+=864e5}return out}
+const WD_ES=["dom","lun","mar","mié","jue","vie","sáb"];
+function wdES(iso){return WD_ES[new Date(Date.UTC(+iso.slice(0,4),+iso.slice(5,7)-1,+iso.slice(8,10))).getUTCDay()]}
+function mcAvgCategory(key){const vals=pastEntries().map(m=>(m.ratings||{})[key]).filter(v=>v>0);return vals.length?vals.reduce((a,b)=>a+b,0)/vals.length:null}
+function mcOverallScore(m){const vals=["ship","food","entertainment","sport"].map(k=>(m.ratings||{})[k]).filter(v=>v>0);return vals.length?vals.reduce((a,b)=>a+b,0)/vals.length:null}
+function mcCountry(p){return ALL_PORT_COUNTRY[p]||PCTRY[p]||""}
+function mcMoney(v,cur){if(v==null||v==="")return"—";return nf.format(+v)+(cur==="USD"?" $":" €")}
+function mcPerPerson(m){if(m.priceTotal==null||m.priceTotal==="")return null;const pax=+m.persons||2;return+m.priceTotal/pax}
+
+/* ---------------- loyalty / fidelización programs ---------------- */
+const LOYALTY={
+  "Crown & Anchor Society":{color:"#1D4FA3",tiers:[
+    {name:"Miembro",min:0},{name:"Gold",min:3},{name:"Platinum",min:30},{name:"Emerald",min:55},
+    {name:"Diamond",min:80},{name:"Diamond Plus",min:175},{name:"Pinnacle Club",min:700}
+  ]},
+  "MSC Voyagers Club":{color:"#0B2D5B",tiers:[
+    {name:"Welcome",min:0},{name:"Classic",min:1},{name:"Silver",min:2200},{name:"Gold",min:4300},
+    {name:"Diamond",min:10000},{name:"Blue Diamond",min:25000}
+  ]}
+};
+function loyaltyTierInfo(total,tiers){let cur=tiers[0],next=null;
+for(let i=0;i<tiers.length;i++){if(total>=tiers[i].min){cur=tiers[i];next=tiers[i+1]||null}}
+return{cur,next}}
+function loyaltyCard(programName,total,entries){const prog=LOYALTY[programName];
+const nfi=v=>Math.round(v).toLocaleString("de-DE");
+if(!prog)return`<div class="section" style="--lc:var(--violet)"><h2>🏅 ${esc(programName)}</h2><div class="statgrid"><div class="statcard" style="--lc:var(--violet)"><div class="v">${nfi(total)}</div><div class="l">Puntos acumulados</div></div></div><div class="ratesumm" style="margin-top:8px">${entries.length} crucero(s) registrados con este programa. Programa no reconocido — agrégalo con niveles si quieres ver tu progreso.</div></div>`;
+const{cur,next}=loyaltyTierInfo(total,prog.tiers);
+const pct=next?Math.max(0,Math.min(100,Math.round((total-cur.min)/(next.min-cur.min)*100))):100;
+const ladder=prog.tiers.map(t=>`<div class="loytier${t===cur?" active":""}${total>=t.min?" reached":""}" style="--lc:${prog.color}"><span class="ln">${esc(t.name)}</span><span class="lp">${nfi(t.min)}+</span></div>`).join("");
+return`<div class="section" style="--lc:${prog.color}"><h2>🏅 ${esc(programName)}</h2>
+<div class="statgrid">
+<div class="statcard" style="--lc:${prog.color}"><div class="v">${nfi(total)}</div><div class="l">Puntos acumulados</div></div>
+<div class="statcard" style="--lc:${prog.color}"><div class="v">${esc(cur.name)}</div><div class="l">Nivel actual</div></div>
+</div>
+${next?`<div class="ratesumm" style="margin-top:10px">Te faltan <b>${nfi(next.min-total)}</b> puntos para <b>${esc(next.name)}</b></div><div class="track" style="margin-top:6px"><div class="fill" style="width:${pct}%;background:${prog.color}"></div></div>`:`<div class="ratesumm" style="margin-top:10px">🎉 Nivel máximo alcanzado</div>`}
+<div class="loyladder">${ladder}</div>
+</div>`}
+function renderFidelizacion(){const byProg={};
+MYC.forEach(m=>{if(!m.loyaltyProgram)return;(byProg[m.loyaltyProgram]=byProg[m.loyaltyProgram]||[]).push(m)});
+const names=Object.keys(byProg).sort((a,b)=>(LOYALTY[b]?1:0)-(LOYALTY[a]?1:0));
+$("sub-fidelizacion").innerHTML=names.length?names.map(n=>{const entries=byProg[n];const total=entries.reduce((s,m)=>s+(+m.loyaltyPoints||0),0);return loyaltyCard(n,total,entries)}).join(""):'<div class="empty">Todavía no registraste puntos de fidelización. Al agregar un crucero, elige el programa e indica los puntos obtenidos en ese viaje.</div>'}
+function donutHTML(entries,centerVal,centerSub){
+  const total=entries.reduce((s,e)=>s+e.value,0)||1;
+  let acc=0;const stops=entries.map(e=>{const pct=e.value/total*100;const s=`${e.color} ${acc.toFixed(2)}% ${(acc+pct).toFixed(2)}%`;acc+=pct;return s}).join(",")||"var(--line) 0% 100%";
+  const legend=entries.map(e=>`<div class="legend-item"><span class="legend-dot" style="background:${e.color}"></span>${e.icon||""} ${esc(e.label)}<b>${e.value}</b></div>`).join("");
+  return`<div class="donut-wrap"><div class="donut" style="background:conic-gradient(${stops})"><div class="donut-center"><span>${esc(String(centerVal))}</span>${centerSub?`<small>${esc(centerSub)}</small>`:""}</div></div><div class="legend">${legend||'<span class="sub">Sin datos todavía</span>'}</div></div>`
+}
+function radarChartHTML(labels,vals,max,color){
+  const size=300,cx=size/2,cy=size/2,r=size/2-70,n=labels.length;
+  const pt=(i,v)=>{const ang=-Math.PI/2+i*(2*Math.PI/n);const rad=r*(Math.max(0,Math.min(v,max))/max);return[cx+rad*Math.cos(ang),cy+rad*Math.sin(ang)]};
+  const axisPt=(i,rad)=>{const ang=-Math.PI/2+i*(2*Math.PI/n);return[cx+rad*Math.cos(ang),cy+rad*Math.sin(ang)]};
+  const rings=[0.33,0.66,1].map(f=>`<polygon points="${labels.map((_,i)=>axisPt(i,r*f).map(x=>x.toFixed(1)).join(",")).join(" ")}" fill="none" stroke="var(--line)" stroke-width="1"/>`).join("");
+  const axes=labels.map((_,i)=>{const[x,y]=axisPt(i,r);return`<line x1="${cx}" y1="${cy}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" stroke="var(--line)" stroke-width="1"/>`}).join("");
+  const dataPts=labels.map((_,i)=>pt(i,vals[i]||0).map(x=>x.toFixed(1)).join(",")).join(" ");
+  const dotEls=labels.map((_,i)=>{const[x,y]=pt(i,vals[i]||0);return`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="4" fill="${color}" stroke="var(--panel)" stroke-width="1.5"/>`}).join("");
+  const labelEls=labels.map((lab,i)=>{const[x,y]=axisPt(i,r+30);return`<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" text-anchor="middle" dominant-baseline="middle" class="radar-lbl">${esc(lab)}</text>`}).join("");
+  return`<svg viewBox="0 0 ${size} ${size}" class="radar">${rings}${axes}<polygon points="${dataPts}" fill="${color}" fill-opacity="0.3" stroke="${color}" stroke-width="2.5"/>${dotEls}${labelEls}</svg>`
+}
+function renderResumen(){const past=pastEntries(),fut=futureEntries();
+const totalNights=past.reduce((s,m)=>s+(nightsBetween(m.depDate,m.arrDate)||0),0);
+const lineCount={};past.forEach(m=>{if(m.line)lineCount[m.line]=(lineCount[m.line]||0)+1});
+const portCount={};past.forEach(m=>entryPorts(m).forEach(p=>{if(p)portCount[normPort(p)]=portCount[normPort(p)]||{name:p,n:0},portCount[normPort(p)].n++}));
+const ctryCount={};past.forEach(m=>entryPorts(m).forEach(p=>{const ctry=mcCountry(p);if(ctry)ctryCount[ctry]=(ctryCount[ctry]||0)+1}));
+const shipStats=shipRatingStats();
+const topShips=Object.values(shipStats).sort((a,b)=>(b.sum/b.n)-(a.sum/a.n)).slice(0,6);
+const topPorts=Object.values(portCount).sort((a,b)=>b.n-a.n).slice(0,10);
+const overallVals=past.flatMap(m=>["ship","food","entertainment","sport"].map(k=>(m.ratings||{})[k]).filter(v=>v>0));
+const overall=overallVals.length?overallVals.reduce((a,b)=>a+b,0)/overallVals.length:null;
+const nextTrip=fut.slice().sort((a,b)=>(a.depDate||"").localeCompare(b.depDate||""))[0];
+
+/* fotos destacadas: las más recientes primero */
+const pastRecentFirst=past.slice().sort((a,b)=>(b.arrDate||"").localeCompare(a.arrDate||""));
+const highlightPhotos=[];
+for(const m of pastRecentFirst){for(const p of allCruisePhotos(m)){highlightPhotos.push({...p,ship:m.ship});if(highlightPhotos.length>=12)break}if(highlightPhotos.length>=12)break}
+const heroPhotos=highlightPhotos.slice(0,4);
+
+/* línea temporal compacta y horizontal: lo más nuevo primero */
+const allTrips=[...past.map(m=>({m,past:true})),...fut.map(m=>({m,past:false}))].sort((a,b)=>(b.m.depDate||"").localeCompare(a.m.depDate||""));
+let markerDone=false;
+const tlhItem=({m,past:isP})=>{const L=lc(m.line),sc=isP?mcOverallScore(m):null;
+return`<div class="tlh-card${isP?"":" future"}" style="--lc:${L[1]}"><div class="tlh-date">${fmtD(m.depDate)}</div><div class="tlh-ship">${L[3]?`<img class="llogo" src="${esc(L[3])}" alt="" onerror="this.remove()">`:""}${esc(m.ship||"Crucero")}</div><div class="tlh-route">${esc(m.depPort||"?")} → ${esc(m.arrPort||"?")}</div>${isP?(sc!=null?`<div class="mc-score" style="margin-top:2px;padding:2px 7px">${starsHTML(sc,"",true)}<span class="num" style="font-size:12px">${sc.toFixed(1)}</span></div>`:'<span class="pill p-base" style="margin-top:2px;font-size:10px">Sin valorar</span>'):'<span class="pill p-sup" style="margin-top:2px;font-size:10px">Próximo</span>'}</div>`};
+let tl=allTrips.map(t=>{let pre="";if(!markerDone&&t.past){markerDone=true;pre=`<div class="tlh-today"><span>HOY</span></div>`}return pre+tlhItem(t)}).join("");
+if(!markerDone&&allTrips.length)tl+=`<div class="tlh-today"><span>HOY</span></div>`;
+
+/* donut: mezcla de países visitados */
+const ctrySorted=Object.entries(ctryCount).sort((a,b)=>b[1]-a[1]);
+const ctryEntries=ctrySorted.slice(0,6).map(([k,v],i)=>({label:k,value:v,color:paletteColor(i),icon:flagTag(k)}));
+const ctryRest=ctrySorted.slice(6).reduce((s,[,v])=>s+v,0);
+if(ctryRest)ctryEntries.push({label:"Otros",value:ctryRest,color:"var(--ink-3)",icon:"🌐"});
+
+/* donut: naviera más usada */
+const lineEntries=Object.entries(lineCount).sort((a,b)=>b[1]-a[1]).map(([k,v])=>{const L=lc(k);return{label:k,value:v,color:L[1],icon:L[3]?`<img class="llogo" src="${esc(L[3])}" alt="" onerror="this.remove()">`:""}});
+
+/* radar: valoración media por categoría */
+const radarLabels=["Barco","Comida","Shows","Deporte"];
+const radarVals=["ship","food","entertainment","sport"].map(k=>mcAvgCategory(k)||0);
+const hasRatings=radarVals.some(v=>v>0);
+
+/* nube de puertos más visitados */
+const maxPort=topPorts.length?topPorts[0].n:1;
+const cloud=topPorts.map(p=>{const ctry=mcCountry(p.name);const scale=0.82+0.7*(p.n/maxPort);return`<span class="cloud-chip" style="font-size:${(11.5*scale).toFixed(1)}px">${ctry?flagTag(ctry):"⚓"} ${esc(p.name)}<b>${p.n}</b></span>`}).join("");
+
+/* tarjetas de barcos mejor valorados, con foto si hay */
+const shipCardsHTML=topShips.map(s=>{
+  const entry=pastRecentFirst.find(m=>normShip(m.ship)===normShip(s.name));
+  const photo=pastRecentFirst.map(m=>normShip(m.ship)===normShip(s.name)?allCruisePhotos(m)[0]:null).find(Boolean);
+  const L=lc(entry?entry.line:"");const avg=s.sum/s.n;
+  return`<div class="shipcard" style="--lc:${L[1]}">${photo?`<div class="shipcard-ph" style="background-image:url('${esc(photo.src)}')"></div>`:`<div class="shipcard-ph shipcard-ph-fallback">${L[3]?`<img src="${esc(L[3])}" alt="">`:"🚢"}</div>`}<div class="shipcard-body"><b title="${esc(s.name)}">${esc(s.name)}</b><div class="mc-score" style="margin-top:4px">${starsHTML(avg,"",true)}<span class="num">${avg.toFixed(1)}</span></div></div></div>`
+}).join("");
+
+$("sub-resumen").innerHTML=`
+<div class="hero">${heroPhotos.length?`<div class="hero-photos">${heroPhotos.map(p=>`<img src="${esc(p.src)}" alt="">`).join("")}</div><div class="hero-overlay"></div>`:""}<div class="statgrid">
+<div class="statcard hero-card" style="--lc:var(--sun)"><div class="v">${past.length}</div><div class="l">Cruceros realizados</div></div>
+<div class="statcard hero-card" style="--lc:var(--coral)"><div class="v">${totalNights}</div><div class="l">Noches navegadas</div></div>
+<div class="statcard hero-card" style="--lc:var(--sea)"><div class="v">${Object.keys(ctryCount).length}</div><div class="l">Países visitados</div></div>
+<div class="statcard hero-card" style="--lc:var(--green)"><div class="v">${Object.keys(portCount).length}</div><div class="l">Ciudades/puertos visitados</div></div>
+<div class="statcard hero-card" style="--lc:var(--sun)"><div class="v">${overall?overall.toFixed(1):"—"}</div><div class="l">Valoración media general</div></div>
+<div class="statcard hero-card" style="--lc:var(--coral)"><div class="v">${fut.length}</div><div class="l">Próximos cruceros</div></div>
+</div></div>
+<div class="section" style="--lc:var(--coral)"><h2>🧭 Tu línea temporal <span class="sub" style="font-weight:600;font-size:11px;text-transform:none">· lo más nuevo primero</span></h2>${allTrips.length?`<div class="timeline-h">${tl}</div>`:'<div class="empty">Agrega cruceros en Pasados o Próximamente para ver tu línea temporal.</div>'}</div>
+${nextTrip?`<div class="section" style="--lc:var(--sky-ink)"><h2>⛴ Tu próximo crucero</h2><div class="mcroute"><b>${esc(nextTrip.ship||"—")}</b> (${esc(nextTrip.line||"—")}) · ${fmtD(nextTrip.depDate)} → ${fmtD(nextTrip.arrDate)} · ${esc(nextTrip.depPort||"")} → ${esc(nextTrip.arrPort||"")}</div></div>`:""}
+${highlightPhotos.length?`<div class="section" style="--lc:var(--sun)"><h2>📸 Fotos destacadas</h2><div class="photogrid">${highlightPhotos.map(p=>`<div class="photocell"><img src="${esc(p.src)}" alt="" data-lb="${esc(p.src)}" data-cap="${esc(p.comment||p.label||p.ship||"")}"><span class="photocap">${esc(p.label||p.ship||"")}</span></div>`).join("")}</div></div>`:""}
+<div class="resumen-grid2">
+<div class="section" style="--lc:var(--sun)"><h2>⭐ Valoración media por categoría</h2>${hasRatings?`<div class="radar-wrap">${radarChartHTML(radarLabels,radarVals,5,"var(--sun-ink,var(--sun))")}</div>`:'<div class="empty">Valora tus cruceros pasados para ver tu perfil de valoración.</div>'}</div>
+<div class="section" style="--lc:var(--sea)"><h2>🌍 Mezcla de países</h2>${donutHTML(ctryEntries,Object.keys(ctryCount).length,"países")}</div>
+</div>
+<div class="section" style="--lc:var(--green)"><h2>⚓ Puertos más visitados</h2><div class="cloud">${cloud||'<div class="empty">Sin datos todavía.</div>'}</div></div>
+<div class="resumen-grid2">
+<div class="section" style="--lc:var(--violet)"><h2>🚢 Barcos mejor valorados</h2>${topShips.length?`<div class="shipgrid">${shipCardsHTML}</div>`:'<div class="empty">Valora tus cruceros pasados para ver un ranking.</div>'}</div>
+<div class="section" style="--lc:var(--coral)"><h2>🏳 Naviera más usada</h2>${donutHTML(lineEntries,past.length,"cruceros")}</div>
+</div>`;
+$("sub-resumen").querySelectorAll("[data-lb]").forEach(img=>{img.onclick=()=>openLightbox(img.dataset.lb,null,img.dataset.cap)})}
+
+function mcCard(m,isPast){const ports=entryPorts(m).filter(Boolean);
+const ratingRow=(label,key)=>`<div class="ratebox"><span>${esc(label)}</span>${starsHTML((m.ratings||{})[key],"",false)}</div>`;
+const itinDayHTML=(port,date,ph,stars)=>{
+if(!port)return`<div class="itin-day sea"><div class="itin-rail"><span class="itin-dot sea">🌊</span></div><div class="itin-card"><div class="itin-card-top"><span class="itin-port">En el mar</span>${date?`<span class="itin-date">${fmtD(date)} · ${wdES(date)}</span>`:""}</div></div></div>`;
+const ctry=mcCountry(port);
+return`<div class="itin-day port"><div class="itin-rail"><span class="itin-dot">${ctry?flagTag(ctry):"⚓"}</span></div><div class="itin-card">
+<div class="itin-card-top"><span class="itin-port">${esc(port)}</span>${date?`<span class="itin-date">${fmtD(date)} · ${wdES(date)}</span>`:""}</div>
+${stars?`<div class="itin-stars">${stars}</div>`:""}
+${ph?`<div class="itin-photo-row"><img class="itin-photo" src="${esc(ph.src)}" alt="" data-lb="${esc(ph.src)}" data-cap="${esc(ph.comment||"")}">${ph.comment?`<span class="itin-comment">${esc(ph.comment)}</span>`:""}</div>`:""}
+</div></div>`};
+const itinRows=`<div class="itin-timeline">${(m.days&&m.days.length)?m.days.map(d=>itinDayHTML(d.port,d.date,d.photo?photoObjOf(d.photo):null,isPast?starsHTML((m.portRatings||{})[d.port],"",false):"")).join("")
+  :ports.map(p=>itinDayHTML(p,null,null,isPast?starsHTML((m.portRatings||{})[p],"",false):"")).join("")}</div>`;
+const L=lc(m.line),open=MCOPEN.has(m.id),score=isPast?mcOverallScore(m):null;
+const nights=nightsBetween(m.depDate,m.arrDate);
+const titleBits=[esc(m.ship||"Crucero sin nombre"),`${fmtD(m.depDate)} → ${fmtD(m.arrDate)}`,nights!=null?`${nights} noches`:null].filter(Boolean);
+const pp=mcPerPerson(m);
+const detailsRows=[];
+if(m.cabin||m.cabinNumber)detailsRows.push(`<div class="ratebox"><span>🛏 Camarote</span><b>${esc(m.cabin||"—")}${m.cabinNumber?` · Nº ${esc(m.cabinNumber)}`:""}</b></div>`);
+if(m.priceTotal!=null&&m.priceTotal!=="")detailsRows.push(`<div class="ratebox"><span>💶 Precio total${m.persons?` (${m.persons} pers.)`:""}</span><b>${mcMoney(m.priceTotal,m.priceCurrency)}</b></div>`,`<div class="ratebox"><span>💶 Precio por persona</span><b>${mcMoney(pp,m.priceCurrency)}</b></div>`);
+if(m.loyaltyProgram)detailsRows.push(`<div class="ratebox"><span>🏅 ${esc(m.loyaltyProgram)}</span><b>${m.loyaltyPoints?`+${(+m.loyaltyPoints).toLocaleString('de-DE')} pts`:"—"}</b></div>`);
+const detailsBlock=detailsRows.length?`<div class="ratebox"><b>Detalles del viaje</b></div>${detailsRows.join("")}`:"";
+const ratingsBlock=isPast?`<div class="ratebox"${detailsBlock?' style="border-top:1px solid var(--line);margin-top:4px;padding-top:8px"':""}><b>Valoraciones por categoría</b></div>${ratingRow("Barco","ship")}${ratingRow("Comida","food")}${ratingRow("Entretenimiento / Shows","entertainment")}${ratingRow("Deporte","sport")}`:"";
+const peopleMet=(m.peopleIds||[]).map(id=>PEOPLE.find(p=>p.id===id)).filter(Boolean);
+const allPhotos=allCruisePhotos(m);
+const photosRow=allPhotos.length?`<div class="mcphotos-collapsed"><div class="mcphotos-stack">${allPhotos.slice(0,4).map(it=>`<img src="${esc(it.src)}" alt="">`).join("")}</div><button class="btn ghost" data-mc-gallery="${m.id}" type="button">📷 Ver galería (${allPhotos.length})</button></div>`:"";
+return`<div class="mccard" style="--lc:${L[1]}" data-mc="${m.id}">
+<div class="top"><div><h3>${L[3]?`<img class="llogo" src="${esc(L[3])}" alt="" onerror="this.remove()" style="margin-right:6px;vertical-align:-5px">`:""}${titleBits.join(" · ")}</h3>${m.line?`<div class="mcroute">${esc(m.line)}</div>`:""}</div><div class="acts"><button class="btn ghost" data-mc-toggle="${m.id}">${open?"Ocultar desglose ▴":"Ver desglose ▾"}</button><button class="btn ghost" data-mc-edit="${m.id}">Editar</button><button class="btn" data-mc-del="${m.id}">Borrar</button></div></div>
+${ports.length?`<div class="chips">${ports.map(p=>`<span class="portchip">${mcCountry(p)?flagTag(mcCountry(p)):""} ${esc(p)}</span>`).join("")}</div>`:""}
+${photosRow}
+${isPast?`<div class="mc-score">${score!=null?starsHTML(score,"",true)+`<span class="num">${score.toFixed(1)}</span>`:'<span class="sub">Sin valorar todavía — abre el desglose para puntuar</span>'}</div>`:""}
+${open?`<div class="mcbreak">${detailsBlock}${ratingsBlock}${peopleMet.length?`<div class="ratebox" style="border-top:1px solid var(--line);margin-top:4px;padding-top:8px"><b>Personas que conociste</b></div><div class="mcpeople">${peopleMet.map(p=>`<span class="portchip">🧑 ${personChipInner(p)}</span>`).join("")}</div>`:""}<div class="ratebox" style="${detailsBlock||ratingsBlock||peopleMet.length?"border-top:1px solid var(--line);margin-top:4px;padding-top:8px":""}"><b>Itinerario día a día</b></div>${itinRows}<label class="fld" style="margin-top:8px">Comentario<textarea data-mc-comment rows="2" style="width:100%">${esc(m.comment||"")}</textarea></label></div>`:""}
+</div>`}
+function wireMcCard(el,m,isPast){
+el.querySelectorAll("[data-lb]").forEach(img=>img.onclick=()=>openLightbox(img.dataset.lb,undefined,img.dataset.cap||""));
+const galBtn=el.querySelector("[data-mc-gallery]");if(galBtn)galBtn.onclick=()=>openGallery(m);
+const starsBoxes=el.querySelectorAll(".stars:not(.ro)");
+const keys=["ship","food","entertainment","sport"];
+const ports=entryPorts(m).filter(Boolean);
+starsBoxes.forEach((box,i)=>{box.querySelectorAll("button").forEach(btn=>btn.onclick=()=>{const v=+btn.dataset.v;
+if(i<keys.length){m.ratings=m.ratings||{};m.ratings[keys[i]]=v}else{const p=ports[i-keys.length];m.portRatings=m.portRatings||{};m.portRatings[p]=v}
+persistMYC();const parent=box.closest(".mccard");const fresh=mcCard(m,isPast);parent.outerHTML=fresh;const again=document.querySelector(`[data-mc="${m.id}"]`);wireMcCard(again,m,isPast);renderResumen()})});
+const cm=el.querySelector("[data-mc-comment]");if(cm)cm.onblur=()=>{m.comment=cm.value;persistMYC()};
+const toggleBtn=el.querySelector("[data-mc-toggle]");if(toggleBtn)toggleBtn.onclick=()=>{MCOPEN.has(m.id)?MCOPEN.delete(m.id):MCOPEN.add(m.id);const fresh=mcCard(m,isPast);el.outerHTML=fresh;const again=document.querySelector(`[data-mc="${m.id}"]`);wireMcCard(again,m,isPast)};
+const delBtn=el.querySelector("[data-mc-del]");if(delBtn)delBtn.onclick=()=>{if(!confirm("¿Borrar este crucero de tu historial?"))return;MYC=MYC.filter(x=>x.id!==m.id);persistMYC();renderMis()};
+const editBtn=el.querySelector("[data-mc-edit]");if(editBtn)editBtn.onclick=()=>openCruiseForm(m)}
+const PF={q:"",line:"",year:"",sort:"recent"};
+function pasadosFilterOptionsInit(){const past=pastEntries();
+const lines=[...new Set(past.map(m=>m.line).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es'));
+const years=[...new Set(past.map(m=>(m.depDate||"").slice(0,4)).filter(Boolean))].sort((a,b)=>b.localeCompare(a));
+const lineSel=$("pf-line"),curLine=lineSel.value;
+lineSel.innerHTML='<option value="">Todas</option>'+lines.map(l=>`<option${l===curLine?" selected":""}>${esc(l)}</option>`).join("");
+const yearSel=$("pf-year"),curYear=yearSel.value;
+yearSel.innerHTML='<option value="">Todos</option>'+years.map(y=>`<option${y===curYear?" selected":""}>${esc(y)}</option>`).join("")}
+function initPasadosFilters(){
+$("pf-q").oninput=()=>{PF.q=$("pf-q").value;renderPasados()};
+$("pf-line").onchange=()=>{PF.line=$("pf-line").value;renderPasados()};
+$("pf-year").onchange=()=>{PF.year=$("pf-year").value;renderPasados()};
+$("pf-sort").onchange=()=>{PF.sort=$("pf-sort").value;renderPasados()};
+$("pf-reset").onclick=()=>{PF.q="";PF.line="";PF.year="";PF.sort="recent";$("pf-q").value="";$("pf-sort").value="recent";renderPasados()}}
+function renderPasados(){pasadosFilterOptionsInit();
+let past=pastEntries();
+const q=PF.q.trim().toLowerCase();
+if(q)past=past.filter(m=>{const hay=[m.ship,m.line,m.comment,...entryPorts(m)].filter(Boolean).join(" ").toLowerCase();return hay.includes(q)});
+if(PF.line)past=past.filter(m=>m.line===PF.line);
+if(PF.year)past=past.filter(m=>(m.depDate||"").slice(0,4)===PF.year);
+past=past.slice().sort((a,b)=>{if(PF.sort==="oldest")return(a.arrDate||"").localeCompare(b.arrDate||"");if(PF.sort==="rating"){const sa=mcOverallScore(a),sb=mcOverallScore(b);if(sa==null&&sb==null)return(b.arrDate||"").localeCompare(a.arrDate||"");if(sa==null)return 1;if(sb==null)return-1;return sb-sa}return(b.arrDate||"").localeCompare(a.arrDate||"")});
+const total=pastEntries().length;
+$("pasados-count").textContent=total===past.length?`${total} crucero(s) realizados`:`${past.length} de ${total} crucero(s)`;
+$("pasados-list").innerHTML=past.length?past.map(m=>mcCard(m,true)).join(""):`<div class="empty">${total?"Ningún crucero coincide con los filtros.":"Todavía no has agregado ningún crucero pasado."}</div>`;
+past.forEach(m=>{const el=document.querySelector(`#pasados-list [data-mc="${m.id}"]`);if(el)wireMcCard(el,m,true)})}
+function renderProx(){const fut=futureEntries().slice().sort((a,b)=>(a.depDate||"").localeCompare(b.depDate||""));
+$("prox-count").textContent=`${fut.length} próximo(s) crucero(s)`;
+$("prox-list").innerHTML=fut.length?fut.map(m=>mcCard(m,false)).join(""):'<div class="empty">Todavía no has agregado ningún crucero próximo.</div>';
+fut.forEach(m=>{const el=document.querySelector(`#prox-list [data-mc="${m.id}"]`);if(el)wireMcCard(el,m,false)})}
+function renderMis(){renderResumen();renderPasados();renderProx();renderFidelizacion()}
+
+function openCruiseForm(existing){const isEdit=!!existing;
+let photos=(existing?.photos||[]).map(photoObjOf);
+let peopleIds=(existing?.peopleIds||[]).slice();
+/* seed per-date port values: prefer existing.days; migrate legacy depPort/ports/arrPort if present */
+const dayPorts={};
+const dayPhotos={};
+if(isEdit){
+if(existing.days&&existing.days.length){existing.days.forEach(d=>{if(d.port)dayPorts[d.date]=d.port;if(d.photo)dayPhotos[d.date]=photoObjOf(d.photo)})}
+else{const legacyDates=datesBetween(existing.depDate,existing.arrDate);const legacyPorts=[];if(existing.depPort)legacyPorts.push(existing.depPort);(existing.ports||[]).forEach(p=>legacyPorts.push(p));if(existing.arrPort&&existing.arrPort!==existing.depPort)legacyPorts.push(existing.arrPort);
+/* spread legacy ports evenly across the date range so no data is lost */
+if(legacyDates.length&&legacyPorts.length){legacyPorts.forEach((p,i)=>{const d=legacyDates[Math.min(i,legacyDates.length-1)];dayPorts[d]=p})}}}
+const lineNames=Object.keys(LINES).sort();
+$("modal").innerHTML=`<h2>${isEdit?"Editar crucero":"Agregar crucero"}</h2>
+<div class="frow">
+<label class="fld grow">Naviera<select id="mf-line-sel"><option value="">Elegir…</option>${lineNames.map(l=>`<option>${esc(l)}</option>`).join("")}<option value="__otra__">Otra (escribir)…</option></select></label>
+<label class="fld grow" id="mf-line-other-wrap" hidden>Nombre de la naviera<input id="mf-line-other" placeholder="Naviera"></label>
+</div>
+<div class="frow">
+<label class="fld grow" id="mf-ship-sel-wrap">Barco<select id="mf-ship-sel"><option value="">Elige primero la naviera</option></select></label>
+<label class="fld grow" id="mf-ship-other-wrap" hidden>Nombre del barco<input id="mf-ship-other" placeholder="Barco"></label>
+</div>
+<div class="frow">
+<label class="fld">Fecha desde<input id="mf-from" type="date" value="${esc(existing?.depDate||"")}"></label>
+<label class="fld">Fecha hasta<input id="mf-to" type="date" value="${esc(existing?.arrDate||"")}"></label>
+</div>
+<div class="frow">
+<label class="fld grow">Tipo de camarote<input id="mf-cabin" placeholder="Interior, Exterior, Balcón, Suite…" value="${esc(existing?.cabin||"")}"></label>
+<label class="fld">Nº de camarote<input id="mf-cabin-num" placeholder="Ej. 8042" value="${esc(existing?.cabinNumber||"")}"></label>
+<label class="fld">Precio total<input id="mf-price" type="number" min="0" step="0.01" placeholder="0.00" value="${existing?.priceTotal??""}"></label>
+<label class="fld">Moneda<select id="mf-cur"><option value="EUR" ${existing?.priceCurrency!=="USD"?"selected":""}>EUR €</option><option value="USD" ${existing?.priceCurrency==="USD"?"selected":""}>USD $</option></select></label>
+<label class="fld">Nº personas<input id="mf-pax" type="number" min="1" value="${existing?.persons||2}"></label>
+</div>
+<div style="font:600 12.5px var(--f-body);color:var(--ink-2);margin:-2px 0 6px">Precio por persona: <b id="mf-pp-val">—</b></div>
+<div class="frow">
+<label class="fld grow">Programa de fidelización<select id="mf-loy-sel"><option value="">Ninguno</option>${Object.keys(LOYALTY).map(p=>`<option value="${esc(p)}">${esc(p)}</option>`).join("")}<option value="__otro__">Otro (escribir)…</option></select></label>
+<label class="fld grow" id="mf-loy-other-wrap" hidden>Nombre del programa<input id="mf-loy-other" placeholder="Programa de fidelización"></label>
+<label class="fld">Puntos obtenidos<input id="mf-loy-pts" type="number" min="0" step="1" placeholder="0" value="${existing?.loyaltyPoints||""}"></label>
+</div>
+<datalist id="mf-portlist">${Object.keys(ALL_PORT_COUNTRY).sort((a,b)=>a.localeCompare(b,'es')).map(p=>`<option value="${esc(p)}">`).join("")}</datalist>
+<h3 style="margin:4px 0 0;font:700 12px var(--f-body);text-transform:uppercase;letter-spacing:.07em;color:var(--ink-2)">Itinerario día a día</h3>
+<div class="sub" style="margin:-4px 0 0">Click en 📷 junto a un puerto para agregarle una foto de esa escala.</div>
+<div id="mf-daylist" class="daylist"></div>
+<input type="file" id="mf-dayphoto-input" accept="image/*" hidden>
+<h3 style="margin:4px 0 0;font:700 12px var(--f-body);text-transform:uppercase;letter-spacing:.07em;color:var(--ink-2)">Galería del viaje</h3>
+<div id="mf-photos" class="photogrid"></div>
+<input type="file" id="mf-photo-input" accept="image/*" hidden>
+<h3 style="margin:4px 0 0;font:700 12px var(--f-body);text-transform:uppercase;letter-spacing:.07em;color:var(--ink-2)">Personas que conociste</h3>
+<div class="chips" id="mf-people-chips"></div>
+<div class="frow">
+<label class="fld grow">Agregar a alguien ya registrado<select id="mf-people-sel"><option value="">Elegir…</option>${PEOPLE.map(p=>`<option value="${esc(p.id)}">${esc(personLabel(p))}</option>`).join("")}</select></label>
+<button class="btn" id="mf-people-add" type="button" style="align-self:flex-end">+ Añadir</button>
+</div>
+<div class="frow">
+<label class="fld grow">Nombre (nueva persona)<input id="mf-person-name" placeholder="Nombre"></label>
+<label class="fld">Ciudad<input id="mf-person-city" placeholder="Ciudad"></label>
+</div>
+<div class="frow">
+<label class="fld">Continente<select id="mf-person-cont"><option value="">Elegir…</option>${continentsList().map(c=>`<option>${esc(c)}</option>`).join("")}</select></label>
+<label class="fld grow">País<select id="mf-person-ctry"><option value="">Elige un continente primero</option></select></label>
+<button class="btn ghost" id="mf-person-new" type="button" style="align-self:flex-end">+ Crear y añadir</button>
+</div>
+<div class="acts"><button class="btn ghost" id="mf-cancel">Cancelar</button><button class="btn primary" id="mf-save">${isEdit?"Guardar cambios":"Guardar"}</button></div>`;
+$("modal-back").hidden=false;
+const lineSel=$("mf-line-sel"),lineOtherWrap=$("mf-line-other-wrap"),lineOther=$("mf-line-other");
+const shipSelWrap=$("mf-ship-sel-wrap"),shipOtherWrap=$("mf-ship-other-wrap"),shipOther=$("mf-ship-other");
+function refreshShips(preselectShip){const line=lineSel.value;
+if(line&&line!=="__otra__"&&SHIPS_BY_LINE[line]){const ships=[...SHIPS_BY_LINE[line]].sort((a,b)=>a.localeCompare(b,'es'));
+shipSelWrap.hidden=false;shipOtherWrap.hidden=true;
+$("mf-ship-sel").innerHTML='<option value="">Elegir…</option>'+ships.map(s=>`<option>${esc(s)}</option>`).join("")+'<option value="__otra__">Otro (escribir)…</option>';
+if(preselectShip){if(ships.includes(preselectShip)){$("mf-ship-sel").value=preselectShip}else{$("mf-ship-sel").value="__otra__";shipSelWrap.hidden=true;shipOtherWrap.hidden=false;shipOther.value=preselectShip}}}
+else{shipSelWrap.hidden=true;shipOtherWrap.hidden=false;if(preselectShip)shipOther.value=preselectShip}}
+const LOY_BY_LINE={"Royal Caribbean":"Crown & Anchor Society","MSC":"MSC Voyagers Club"};
+const loySel=$("mf-loy-sel"),loyOtherWrap=$("mf-loy-other-wrap"),loyOther=$("mf-loy-other");
+let loyTouched=false;
+loySel.onchange=()=>{loyTouched=true;loyOtherWrap.hidden=loySel.value!=="__otro__"};
+lineSel.onchange=()=>{lineOtherWrap.hidden=lineSel.value!=="__otra__";refreshShips();if(!loyTouched&&LOY_BY_LINE[lineSel.value]){loySel.value=LOY_BY_LINE[lineSel.value];loyOtherWrap.hidden=true}};
+if(isEdit){
+if(lineNames.includes(existing.line)){lineSel.value=existing.line}
+else if(existing.line){lineSel.value="__otra__";lineOtherWrap.hidden=false;lineOther.value=existing.line}
+refreshShips(existing.ship);
+if(existing.loyaltyProgram){loyTouched=true;if(Object.keys(LOYALTY).includes(existing.loyaltyProgram)){loySel.value=existing.loyaltyProgram}else{loySel.value="__otro__";loyOtherWrap.hidden=false;loyOther.value=existing.loyaltyProgram}}
+}else refreshShips();
+$("modal").addEventListener("change",e=>{if(e.target.id==="mf-ship-sel")shipOtherWrap.hidden=e.target.value!=="__otra__"});
+let dayPicker={date:null,step:"continent",cont:"",ctry:""};
+function dayPickerPanelHTML(){
+if(dayPicker.step==="continent"){
+const conts=continentsList();
+return`<div class="daypicker">
+<div class="dp-row"><button type="button" class="dp-chip dp-clear">🌊 En el mar / sin puerto</button></div>
+<div class="dp-grid">${conts.map(c=>`<button type="button" class="dp-chip" data-cont="${esc(c)}">${CONT_ICON[c]||"🌐"} ${esc(c)}</button>`).join("")}</div>
+<div class="dp-row"><input type="text" class="dp-manual" placeholder="O escribe el puerto manualmente…" list="mf-portlist"><button type="button" class="btn ghost dp-manual-add">Usar</button></div>
+</div>`}
+if(dayPicker.step==="country"){
+const ctrs=countriesByContinent(dayPicker.cont);
+return`<div class="daypicker">
+<div class="dp-row"><button type="button" class="dp-chip dp-back">← Continentes</button><b class="dp-crumb">${CONT_ICON[dayPicker.cont]||""} ${esc(dayPicker.cont)}</b></div>
+<div class="dp-grid">${ctrs.map(c=>`<button type="button" class="dp-chip" data-ctry="${esc(c)}">${flagTag(c)} ${esc(c)}</button>`).join("")||'<span class="sub">Sin países conocidos en este continente</span>'}</div>
+</div>`}
+const ports=portsByCountry(dayPicker.ctry);
+return`<div class="daypicker">
+<div class="dp-row"><button type="button" class="dp-chip dp-back">← ${esc(dayPicker.cont)}</button><b class="dp-crumb">${flagTag(dayPicker.ctry)} ${esc(dayPicker.ctry)}</b></div>
+<div class="dp-grid">${ports.map(p=>`<button type="button" class="dp-chip" data-port="${esc(p)}">⚓ ${esc(p)}</button>`).join("")||'<span class="sub">Sin puertos conocidos, usa el manual</span>'}</div>
+<div class="dp-row"><input type="text" class="dp-manual" placeholder="O escribe el puerto manualmente…"><button type="button" class="btn ghost dp-manual-add">Usar</button></div>
+</div>`}
+function wireDayPicker(panel){
+const clearBtn=panel.querySelector(".dp-clear");if(clearBtn)clearBtn.onclick=()=>{dayPorts[dayPicker.date]="";delete dayPhotos[dayPicker.date];dayPicker.date=null;renderDayList()};
+panel.querySelectorAll("[data-cont]").forEach(b=>b.onclick=()=>{dayPicker.cont=b.dataset.cont;dayPicker.step="country";renderDayList()});
+panel.querySelectorAll("[data-ctry]").forEach(b=>b.onclick=()=>{dayPicker.ctry=b.dataset.ctry;dayPicker.step="port";renderDayList()});
+panel.querySelectorAll("[data-port]").forEach(b=>b.onclick=()=>{dayPorts[dayPicker.date]=b.dataset.port;dayPicker.date=null;renderDayList()});
+const back=panel.querySelector(".dp-back");if(back)back.onclick=()=>{dayPicker.step=dayPicker.step==="port"?"country":"continent";if(dayPicker.step==="continent")dayPicker.ctry="";renderDayList()};
+const manualAdd=panel.querySelector(".dp-manual-add");if(manualAdd)manualAdd.onclick=()=>{const v=panel.querySelector(".dp-manual").value.trim();if(v){dayPorts[dayPicker.date]=v;dayPicker.date=null;renderDayList()}}}
+function renderDayList(){const dep=$("mf-from").value,arr=$("mf-to").value;const list=$("mf-daylist");
+if(dep&&arr&&arr<dep){list.innerHTML='<div class="empty" style="padding:10px 4px">La fecha de llegada no puede ser anterior a la de salida.</div>';return}
+const dates=datesBetween(dep,arr);
+if(!dates.length){list.innerHTML='<div class="empty" style="padding:10px 4px">Ingresa ambas fechas para ver el desglose día por día.</div>';return}
+list.innerHTML=dates.map(d=>{const port=dayPorts[d]||"";const ctry=port?mcCountry(port):"";const ph=dayPhotos[d];
+const photoBtn=!port?"":ph?`<button type="button" class="dayphoto-thumb" data-pdate="${d}" title="Ver/quitar foto del puerto"><img src="${ph.src}" alt=""><span class="dayphoto-rm" data-prm="1">✕</span></button>`:`<button type="button" class="dayphoto-add" data-pdate="${d}" title="Agregar foto de este puerto">📷</button>`;
+const row=`<div class="dayedit"><span class="dlabel">${fmtD(d)}<small>${wdES(d)}</small></span><button type="button" class="dport-btn${dayPicker.date===d?" open":""}" data-date="${d}">${port?`${ctry?flagTag(ctry):""} ${esc(port)}`:'<span class="sub">🌊 En el mar</span>'}</button>${photoBtn}</div>`;
+const commentRow=ph?`<div class="dayphoto-comment-row"><input type="text" class="dayphoto-comment" data-cdate="${d}" placeholder="Comentario de la foto (opcional)" value="${esc(ph.comment||"")}"></div>`:"";
+return `<div class="dayblock">${row}${commentRow}${dayPicker.date===d?dayPickerPanelHTML():""}</div>`}).join("");
+list.querySelectorAll(".dport-btn").forEach(btn=>btn.onclick=()=>{const d=btn.dataset.date;dayPicker=dayPicker.date===d?{date:null,step:"continent",cont:"",ctry:""}:{date:d,step:"continent",cont:"",ctry:""};renderDayList()});
+list.querySelectorAll(".dayphoto-add").forEach(b=>b.onclick=()=>{pendingPhotoDate=b.dataset.pdate;$("mf-dayphoto-input").click()});
+list.querySelectorAll(".dayphoto-thumb").forEach(b=>{b.onclick=e=>{if(e.target.closest(".dayphoto-rm")){delete dayPhotos[b.dataset.pdate];renderDayList();return}openLightbox(dayPhotos[b.dataset.pdate].src,undefined,dayPhotos[b.dataset.pdate].comment)}});
+list.querySelectorAll(".dayphoto-comment").forEach(inp=>inp.oninput=()=>{const d=inp.dataset.cdate;if(dayPhotos[d])dayPhotos[d].comment=inp.value});
+const panel=list.querySelector(".daypicker");if(panel)wireDayPicker(panel)}
+let pendingPhotoDate=null;
+$("mf-dayphoto-input").onchange=async e=>{const file=e.target.files&&e.target.files[0];e.target.value="";if(!file||!pendingPhotoDate)return;
+try{const url=await compressImageFile(file,1000,0.72);dayPhotos[pendingPhotoDate]={src:url,comment:""};renderDayList()}catch(err){alert("No se pudo cargar esa imagen")}};
+$("mf-from").onchange=renderDayList;$("mf-to").onchange=renderDayList;
+renderDayList();
+const GALLERY_MAX=12;
+function renderPhotosUI(){const wrap=$("mf-photos");
+const tiles=photos.map((ph,i)=>`<div class="gphoto"><div class="gphoto-imgwrap"><img src="${ph.src}" alt=""><button type="button" class="photo-rm" data-i="${i}">✕</button></div><input type="text" class="gphoto-comment" data-ci="${i}" placeholder="Comentario (opcional)" value="${esc(ph.comment||"")}"></div>`);
+if(photos.length<GALLERY_MAX)tiles.push(`<button type="button" class="photoslot add" id="mf-photo-addtile">+ Agregar foto</button>`);
+wrap.innerHTML=tiles.join("");
+const addBtn=$("mf-photo-addtile");if(addBtn)addBtn.onclick=()=>$("mf-photo-input").click();
+wrap.querySelectorAll(".photo-rm").forEach(b=>b.onclick=()=>{photos.splice(+b.dataset.i,1);renderPhotosUI()});
+wrap.querySelectorAll(".gphoto-comment").forEach(inp=>inp.oninput=()=>{photos[+inp.dataset.ci].comment=inp.value})}
+$("mf-photo-input").onchange=async e=>{const file=e.target.files&&e.target.files[0];e.target.value="";if(!file)return;
+try{const url=await compressImageFile(file,1000,0.72);photos.push({src:url,comment:""});renderPhotosUI()}catch(err){alert("No se pudo cargar esa imagen")}};
+renderPhotosUI();
+$("mf-person-cont").onchange=()=>{const cs=countriesByContinent($("mf-person-cont").value);$("mf-person-ctry").innerHTML=(cs.length?'<option value="">Elegir…</option>':'<option value="">—</option>')+cs.map(c=>`<option>${esc(c)}</option>`).join("")};
+function renderPeopleUI(){const wrap=$("mf-people-chips");
+wrap.innerHTML=peopleIds.map(id=>{const p=PEOPLE.find(x=>x.id===id);if(!p)return"";return`<span class="chip">${personChipInner(p)} <button type="button" data-rmp="${esc(id)}">✕</button></span>`}).join("")||'<span class="sub">Nadie agregado todavía</span>';
+wrap.querySelectorAll("[data-rmp]").forEach(b=>b.onclick=()=>{peopleIds=peopleIds.filter(x=>x!==b.dataset.rmp);renderPeopleUI()})}
+renderPeopleUI();
+function createPersonFromFields(){const name=$("mf-person-name").value.trim(),country=$("mf-person-ctry").value,city=$("mf-person-city").value.trim();
+if(!name&&!country&&!city)return null;
+const p={id:"p-"+Date.now(),name,country,city};PEOPLE.push(p);persistPeople();peopleIds.push(p.id);
+$("mf-person-name").value="";$("mf-person-cont").value="";$("mf-person-ctry").innerHTML='<option value="">Elige un continente primero</option>';$("mf-person-city").value="";
+const sel=$("mf-people-sel");sel.innerHTML='<option value="">Elegir…</option>'+PEOPLE.map(pp=>`<option value="${esc(pp.id)}">${esc(personLabel(pp))}</option>`).join("");
+renderPeopleUI();return p}
+$("mf-people-add").onclick=()=>{const v=$("mf-people-sel").value;
+if(v){if(!peopleIds.includes(v)){peopleIds.push(v);renderPeopleUI()}$("mf-people-sel").value="";return}
+/* person typed in the "nueva persona" fields but clicked this button by mistake: create from those fields instead of doing nothing */
+if($("mf-person-name").value.trim()||$("mf-person-ctry").value||$("mf-person-city").value.trim()){createPersonFromFields();return}
+alert("Elige a alguien de la lista, o escribe sus datos abajo y pulsa «+ Crear y añadir».")};
+$("mf-person-new").onclick=()=>{if(!createPersonFromFields())alert("Completa al menos un campo para crear una persona")};
+function updatePP(){const tot=$("mf-price").value?+$("mf-price").value:null;const pax=+$("mf-pax").value||2;const cur=$("mf-cur").value;$("mf-pp-val").textContent=tot!=null?mcMoney(tot/pax,cur):"—"}
+$("mf-price").oninput=updatePP;$("mf-pax").oninput=updatePP;$("mf-cur").onchange=updatePP;updatePP();
+$("mf-cancel").onclick=closeModal;
+$("mf-save").onclick=()=>{
+const line=lineSel.value==="__otra__"?lineOther.value.trim():lineSel.value;
+const shipSelEl=$("mf-ship-sel");
+const ship=(!shipSelWrap.hidden&&shipSelEl&&shipSelEl.value&&shipSelEl.value!=="__otra__")?shipSelEl.value:shipOther.value.trim();
+const depDate=$("mf-from").value,arrDate=$("mf-to").value;
+if(!ship||!depDate||!arrDate){alert("Barco y las dos fechas son obligatorios");return}
+if(arrDate<depDate){alert("La fecha de llegada no puede ser anterior a la de salida");return}
+const days=datesBetween(depDate,arrDate).map(d=>({date:d,port:(dayPorts[d]||"").trim(),photo:dayPhotos[d]||null}));
+const ported=days.filter(d=>d.port);
+const priceTotal=$("mf-price").value?+$("mf-price").value:null;
+const loyaltyProgram=loySel.value==="__otro__"?loyOther.value.trim():loySel.value;
+const loyaltyPoints=loyaltyProgram?(+$("mf-loy-pts").value||0):0;
+const base=isEdit?existing:{id:"m-"+Date.now(),ratings:{},portRatings:{},comment:""};
+Object.assign(base,{line,ship,depDate,arrDate,days,depPort:ported[0]?ported[0].port:"",arrPort:ported.length?ported[ported.length-1].port:"",cabin:$("mf-cabin").value.trim(),cabinNumber:$("mf-cabin-num").value.trim(),priceTotal,priceCurrency:$("mf-cur").value,persons:+$("mf-pax").value||2,loyaltyProgram,loyaltyPoints,photos:photos.filter(p=>p&&p.src),peopleIds:peopleIds.slice()});
+delete base.ports;
+if(!isEdit)MYC.push(base);
+persistMYC();closeModal();renderMis();banner(isEdit?"Cambios guardados.":(base.arrDate<todayISO()?"Crucero agregado a PASADOS.":"Crucero agregado a PRÓXIMAMENTE."))}}
+$("mc-add-pasado").onclick=()=>openCruiseForm();
+$("mc-add-prox").onclick=()=>openCruiseForm();
+
+/* ---------------- nav wiring ---------------- */
+function setSec(sec){S.sec=sec;$("sec-buscar").hidden=sec!=="buscar";$("sec-mis").hidden=sec!=="mis";if(sec==="mis")$("sec-mis").style.display="flex";
+$("topnav").querySelectorAll("button").forEach(b=>b.setAttribute("aria-selected",b.dataset.sec===sec));
+if(sec==="mis")renderMis()}
+function setSubBuscar(sub){S.subBuscar=sub;$("sub-todos").style.display=sub==="categorias"?"none":"flex";$("sub-categorias").hidden=sub!=="categorias";
+$("submenu-buscar").querySelectorAll("button").forEach(b=>b.setAttribute("aria-selected",b.dataset.sub===sub));
+if(sub==="categorias"){$("cat-detail-view").hidden=true;$("cat-list-view").hidden=false;CS.catId=null;renderCategorias()}else{S.page=0;renderRows()}}
+function setSubMis(sub){S.subMis=sub;["resumen","pasados","proximamente","fidelizacion"].forEach(s=>{$("sub-"+s).hidden=s!==sub});
+$("submenu-mis").querySelectorAll("button").forEach(b=>b.setAttribute("aria-selected",b.dataset.sub===sub))}
+$("topnav").querySelectorAll("button").forEach(b=>b.onclick=()=>setSec(b.dataset.sec));
+$("submenu-buscar").querySelectorAll("button").forEach(b=>b.onclick=()=>setSubBuscar(b.dataset.sub));
+$("submenu-mis").querySelectorAll("button").forEach(b=>b.onclick=()=>setSubMis(b.dataset.sub));
+
+/* ---------------- info modal (legacy reglas/instrucciones) ---------------- */
+$("info-btn").onclick=()=>{const s=D.settings;const rules=(s.rules||[]).map(r=>`<tr><td>${r.active?"Sí":"No"}</td><td><b>${esc(r.name)}</b></td><td class="r num">${r.minNights??"—"}</td><td class="r num">${r.maxNights??"—"}</td><td class="r num">${r.maxPrice!=null?r.maxPrice.toLocaleString("de-DE")+" "+(r.currency==="EUR"?"€":"$"):"—"}</td><td>${esc(r.basis)}</td><td>${esc(r.conditions)}</td></tr>`).join("");
+$("modal").innerHTML=`<h2>Reglas e instrucciones</h2><div class="tbl-wrap" style="border:0"><table><thead><tr><th>Activa</th><th>Nombre</th><th class="r">Noches mín.</th><th class="r">Noches máx.</th><th class="r">Precio máx.</th><th>Por</th><th>Condiciones</th></tr></thead><tbody>${rules||'<tr><td colspan="7" class="empty">Sin reglas.</td></tr>'}</tbody></table></div><div style="white-space:pre-wrap;font-size:13px">${esc(s.instructions||"")}</div><div class="acts"><button class="btn primary" id="info-close">Cerrar</button></div>`;
+$("modal-back").hidden=false;$("info-close").onclick=closeModal};
+$("modal-back").addEventListener("click",e=>{if(e.target.id==="modal-back")closeModal()});
+
+/* ---------------- misc wiring ---------------- */
+document.querySelectorAll(".cur button").forEach(b=>b.onclick=()=>{S.cur=b.dataset.c;document.querySelectorAll(".cur button").forEach(x=>x.setAttribute("aria-pressed",x===b));$("pmax-l").textContent="Máx. "+(S.cur==="EUR"?"€":"$")+" por persona";try{localStorage.setItem("cw-cur",S.cur)}catch(e){}renderRows()});
+document.querySelectorAll('th [data-sort]:not([data-tbl="cat"])').forEach(b=>b.onclick=()=>{const k=b.dataset.sort;S.sort=S.sort.k===k?{k,dir:-S.sort.dir}:{k,dir:1};renderRows()});
+["f-q","f-line","f-nmin","f-nmax","f-pmax","f-from","f-to","f-we"].forEach(id=>$(id).addEventListener("input",()=>{S.page=0;renderRows()}));
+$("f-reset").onclick=()=>{["f-q","f-line","f-nmin","f-nmax","f-pmax","f-from","f-to"].forEach(id=>$(id).value="");$("f-we").checked=false;S.page=0;renderRows()};
+try{const v=localStorage.getItem("cw-cur");if(v==="EUR"){document.querySelector('.cur [data-c="EUR"]').click()}}catch(e){}
+let stealthOn=lsGet("cw-stealth",false);
+document.documentElement.classList.toggle("stealth",stealthOn);
+$("stealth-toggle").onclick=()=>{stealthOn=!stealthOn;lsSet("cw-stealth",stealthOn);document.documentElement.classList.toggle("stealth",stealthOn)};
+$("export-btn").onclick=()=>{const data={_app:"cruise-planner-backup",_v:1,mycruises:lsGet("cw-mycruises",[]),people:lsGet("cw-people",[]),categories:lsGet("cw-categories",DEFAULT_CATS),saved:lsGet("cw-saved",[])};
+const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
+const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;
+const d=new Date();const pad=n=>String(n).padStart(2,"0");
+a.download=`cruise-planner-backup-${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}.json`;
+document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url)};
+$("import-btn").onclick=()=>$("import-input").click();
+$("import-input").onchange=async e=>{const file=e.target.files&&e.target.files[0];e.target.value="";if(!file)return;
+try{const text=await file.text();const data=JSON.parse(text);
+if(!data||typeof data!=="object"||!Array.isArray(data.mycruises)){alert("Ese archivo no parece un backup válido de CRUISE - PLANNER.");return}
+if(!confirm(`Este archivo tiene ${data.mycruises.length} crucero(s) y ${(data.people||[]).length} persona(s). Esto reemplazará todos tus datos actuales en este navegador (cruceros, personas, categorías y guardados). ¿Continuar?`))return;
+lsSet("cw-mycruises",data.mycruises||[]);
+lsSet("cw-people",data.people||[]);
+if(Array.isArray(data.categories))lsSet("cw-categories",data.categories);
+if(Array.isArray(data.saved))lsSet("cw-saved",data.saved);
+alert("Datos importados correctamente. La página se va a recargar.");
+location.reload()}catch(err){alert("No se pudo leer ese archivo: "+(err&&err.message?err.message:err))}};
+initPasadosFilters();
+lineOptions();renderRows();
+})();
+</script>
+</body>
+</html>
