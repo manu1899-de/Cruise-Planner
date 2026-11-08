@@ -1,4 +1,6 @@
 state.json
 log.txt
+search_log.txt
 *.log
+Cruise Watch.html
 __pycache__/
