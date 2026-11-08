@@ -419,6 +419,10 @@ tr.detail>td{background:var(--bg);padding:18px;border-left:5px solid var(--lc,#8
         <label class="fld check"><input id="f-we" type="checkbox">Salida en fin de semana o festivo</label>
         <button class="btn ghost" id="f-reset">Limpiar</button>
       </div>
+      <details class="catf-group" id="f-more-wrap">
+        <summary class="catf-grouph" style="cursor:pointer">Más filtros — continente, país o puerto de salida/llegada/parada</summary>
+        <div style="display:flex;flex-direction:column;gap:12px;padding-top:12px" id="f-more-body"></div>
+      </details>
       <div class="tbl-wrap"><table>
         <thead><tr>
           <th></th>
@@ -908,7 +912,7 @@ function portVisitCount(port){const k=normPort(port);let n=0;pastEntries().forEa
 function starsHTML(val,id,ro){const v=Math.round(val||0);let h=`<span class="stars${ro?" ro":""}" data-rate="${id||""}">`;for(let i=1;i<=5;i++)h+=`<button data-v="${i}" class="${i<=v?"on":""}" ${ro?"disabled":""}>★</button>`;return h+"</span>"}
 
 /* ---------------- top-level state ---------------- */
-const S={cur:"USD",sec:"buscar",subBuscar:"todos",subMis:"resumen",page:0,sort:{k:"usd",dir:1},open:new Set(),lines:[],from:"",to:""};
+const S={cur:"USD",sec:"buscar",subBuscar:"todos",subMis:"resumen",page:0,sort:{k:"usd",dir:1},open:new Set(),lines:[],from:"",to:"",depLoc:initLocEmpty(),arrLoc:initLocEmpty(),stopLoc:initLocEmpty()};
 const CS={catId:null,page:0,sort:{k:"usd",dir:1},extra:{lines:[],from:"",to:""}};
 
 /* ---------------- TODOS / GUARDADOS table (shared) ---------------- */
@@ -922,6 +926,7 @@ return sortList(baseList().filter(c=>{const p=last(c);
 if(S.lines.length&&!S.lines.includes(c.line))return false;if(nmin&&c.nights<nmin)return false;if(nmax&&c.nights>nmax)return false;
 if(pmax&&p.usd!=null&&CV(p.usd)>pmax)return false;if(from&&c.dep.date<from)return false;if(to&&c.dep.date>to)return false;
 if(we){const i=dinfo(c.dep.date);if(!i.we&&!i.hol)return false}
+if(!matchLocRole(c,S.depLoc,"dep"))return false;if(!matchLocRole(c,S.arrLoc,"arr"))return false;if(!matchLocRole(c,S.stopLoc,"stop"))return false;
 if(q){const hay=[c.ship,c.line,c.title,c.dep.port,c.arr.port,...(c.ports||[]),...countries(c)].join(" ").toLowerCase();if(!hay.includes(q))return false}
 return true}),S.sort)}
 function delta(c){const p=prev(c),l=last(c);if(!p||l.usd==null||p.usd==null)return'<span class="sub">Primera vez</span>';const d=l.usd-p.usd;if(!d)return'<span class="sub">Sin cambio</span>';return`<span class="num ${d<0?"down":"up"}">${d<0?"▼":"▲"} ${M(Math.abs(d),S.cur==="EUR"&&l.eur!=null&&p.eur!=null?Math.abs(l.eur-p.eur):null)}<br>${nf.format(d/p.usd*100)} %</span>`}
@@ -1016,6 +1021,7 @@ $("modal").innerHTML=`<div style="display:flex;justify-content:space-between;ali
 <div class="gallerygrid">${items.map(it=>`<div class="galitem"><img src="${esc(it.src)}" alt="" data-lb="${esc(it.src)}" data-cap="${esc(it.comment||it.label)}"><span class="gcap">${it.label}</span>${it.comment?`<span class="gcap-comment">${esc(it.comment)}</span>`:""}</div>`).join("")||'<div class="empty">Sin fotos todavía.</div>'}</div>`;
 $("modal-back").hidden=false;$("gal-close").onclick=closeModal;
 $("modal").querySelectorAll("[data-lb]").forEach(img=>img.onclick=()=>openLightbox(img.dataset.lb,()=>openGallery(m),img.dataset.cap))}
+function initLocEmpty(){return{continents:[],continentsMin:null,countries:[],countriesMinPorts:null,ports:[]}}
 function initLoc(saved,legacyPorts,legacyCountries,legacyContinents){
   if(saved)return{continents:(saved.continents||[]).slice(),continentsMin:saved.continentsMin||null,countries:(saved.countries||[]).slice(),countriesMinPorts:saved.countriesMinPorts||null,ports:(saved.ports||[]).slice()};
   return{continents:(legacyContinents||[]).slice(),continentsMin:null,countries:(legacyCountries||[]).slice(),countriesMinPorts:null,ports:(legacyPorts||[]).slice()}
@@ -1517,7 +1523,14 @@ document.querySelectorAll('th [data-sort]:not([data-tbl="cat"])').forEach(b=>b.o
 let refreshFFrom=null,refreshFTo=null;
 refreshFFrom=wireDateField("f-from",S,"from",()=>{S.page=0;renderRows()});
 refreshFTo=wireDateField("f-to",S,"to",()=>{S.page=0;renderRows()},()=>{if(!S.from)return null;const[y,m]=S.from.split("-");return{y:+y,m:+m-1}});
-$("f-reset").onclick=()=>{["f-q","f-nmin","f-nmax","f-pmax"].forEach(id=>$(id).value="");$("f-we").checked=false;S.lines=[];S.from="";S.to="";refreshFLineUI&&refreshFLineUI();refreshFFrom&&refreshFFrom();refreshFTo&&refreshFTo();S.page=0;renderRows()};
+function renderFMore(){
+  $("f-more-body").innerHTML=locationRoleHTML("f-dep","Salida","¿Desde dónde zarpa? Puedes dejarlo en continente, afinar a país, o ser exacto con un puerto.")+locationRoleHTML("f-arr","Llegada","¿A dónde desembarca? Misma lógica que Salida.")+locationRoleHTML("f-stop","Parada (cualquier puerto de la ruta)","Para pedir p. ej. «mínimo 3 países de Sudamérica», elige el continente aquí y pon el mínimo — sin elegir país ni puerto.");
+  wireLocationRole("f-dep",S.depLoc,()=>{S.page=0;renderRows()});
+  wireLocationRole("f-arr",S.arrLoc,()=>{S.page=0;renderRows()});
+  wireLocationRole("f-stop",S.stopLoc,()=>{S.page=0;renderRows()})
+}
+renderFMore();
+$("f-reset").onclick=()=>{["f-q","f-nmin","f-nmax","f-pmax"].forEach(id=>$(id).value="");$("f-we").checked=false;S.lines=[];S.from="";S.to="";S.depLoc=initLocEmpty();S.arrLoc=initLocEmpty();S.stopLoc=initLocEmpty();renderFMore();refreshFLineUI&&refreshFLineUI();refreshFFrom&&refreshFFrom();refreshFTo&&refreshFTo();S.page=0;renderRows()};
 try{const v=localStorage.getItem("cw-cur");if(v==="EUR"){document.querySelector('.cur [data-c="EUR"]').click()}}catch(e){}
 let stealthOn=lsGet("cw-stealth",false);
 document.documentElement.classList.toggle("stealth",stealthOn);
