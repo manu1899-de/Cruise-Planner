@@ -168,7 +168,23 @@ def main():
         gid = cid2gid.get(r.get("cid"))
         det = details_full.get(gid) if gid else None
         if det and det.get("days"):
-            c["days"] = det["days"]
+            src_days = det["days"]
+            offset0 = 0
+            if src_days and src_days[0].get("date"):
+                try:
+                    offset0 = (datetime.date.fromisoformat(dep_date) - datetime.date.fromisoformat(src_days[0]["date"])).days
+                except Exception:
+                    offset0 = 0
+            new_days = []
+            for d in src_days:
+                nd = dict(d)
+                if d.get("date"):
+                    try:
+                        nd["date"] = (datetime.date.fromisoformat(d["date"]) + datetime.timedelta(days=offset0)).isoformat()
+                    except Exception:
+                        pass
+                new_days.append(nd)
+            c["days"] = new_days
             c["countries"] = det["countries"]
             if det.get("map"): c["map"] = det["map"]
             if det.get("title"): c["title"] = det["title"]
