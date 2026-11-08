@@ -25,12 +25,6 @@
   --coral:#FF7A63;--coral-soft:#3A1C17;--sun:#FFC23D;--sun-soft:#3A2D0C;--sun-ink:#FFD57A;
   --green:#5FD08F;--green-soft:#123222;--red:#FF7B7B;--red-soft:#3A1717;--violet:#A993F0;--violet-soft:#241C3D;
   --sky-soft:#152740;--sky-ink:#A9C4F0;color-scheme:dark}}
-@media (prefers-color-scheme:dark){
-  .llogo,.llogo-lg{display:none}
-  .rowtitle{font-size:12.5px}
-  .price{font-size:13px}
-  table tr.row td:nth-child(6),table tr.row td:nth-child(7),table tr.row td:nth-child(8){font-size:13px}
-}
 *{box-sizing:border-box}
 html,body{margin:0}
 body{background:var(--bg);color:var(--ink);font:15px/1.55 var(--f-body)}
@@ -382,6 +376,12 @@ tr.detail>td{background:var(--bg);padding:18px;border-left:5px solid var(--lc,#8
 .resumen-grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 @media (max-width:760px){.resumen-grid2{grid-template-columns:1fr}}
 @media (max-width:640px){.mast h1{font-size:26px}.hide-sm{display:none}.days li{grid-template-columns:38px 1fr}.days li .ds{grid-column:2}.dgrid{grid-template-columns:1fr}.barrow{grid-template-columns:100px 1fr auto}}
+@media (prefers-color-scheme:dark){
+  .llogo,.llogo-lg{display:none !important}
+  .rowtitle{font-size:12.5px !important}
+  .price{font-size:13px !important}
+  table tr.row td:nth-child(6),table tr.row td:nth-child(7),table tr.row td:nth-child(8){font-size:13px !important}
+}
 </style>
 </head>
 <body>
