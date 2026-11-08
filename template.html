@@ -25,6 +25,12 @@
   --coral:#FF7A63;--coral-soft:#3A1C17;--sun:#FFC23D;--sun-soft:#3A2D0C;--sun-ink:#FFD57A;
   --green:#5FD08F;--green-soft:#123222;--red:#FF7B7B;--red-soft:#3A1717;--violet:#A993F0;--violet-soft:#241C3D;
   --sky-soft:#152740;--sky-ink:#A9C4F0;color-scheme:dark}}
+@media (prefers-color-scheme:dark){
+  .llogo,.llogo-lg{display:none}
+  .rowtitle{font-size:12.5px}
+  .price{font-size:13px}
+  table tr.row td:nth-child(6),table tr.row td:nth-child(7),table tr.row td:nth-child(8){font-size:13px}
+}
 *{box-sizing:border-box}
 html,body{margin:0}
 body{background:var(--bg);color:var(--ink);font:15px/1.55 var(--f-body)}
