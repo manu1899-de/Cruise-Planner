@@ -122,6 +122,18 @@ tr.detail>td{background:var(--bg);padding:18px;border-left:5px solid var(--lc,#8
 .msdd-opt{display:flex;align-items:center;gap:8px;padding:5px 4px;font-size:13px;font-weight:600;color:var(--ink);cursor:pointer;border-radius:6px}
 .msdd-opt:hover{background:var(--bg)}
 .msdd-sep{border-top:1px solid var(--line);margin:4px 0}
+.dpf-panel{position:absolute;top:calc(100% + 4px);left:0;z-index:40;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px;width:230px;box-shadow:0 10px 28px rgba(0,0,0,.18)}
+.dpf-head{display:flex;justify-content:space-between;align-items:center;font:700 12.5px var(--f-body);color:var(--ink);margin-bottom:6px;text-transform:capitalize}
+.dpf-nav{background:none;border:none;cursor:pointer;font-size:15px;color:var(--ink-2);padding:2px 8px;border-radius:6px}
+.dpf-nav:hover{background:var(--bg)}
+.dpf-dow{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:2px}
+.dpf-dow span{font-size:10px;font-weight:700;color:var(--ink-3);text-align:center}
+.dpf-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.dpf-day{border:none;background:none;padding:6px 0;border-radius:6px;cursor:pointer;font-size:12px;color:var(--ink);font-family:var(--f-mono)}
+.dpf-day:hover{background:var(--bg)}
+.dpf-day.sel{background:var(--sea);color:#fff;font-weight:700}
+.dpf-foot{display:flex;justify-content:space-between;margin-top:8px;gap:6px}
+.dpf-foot .btn{padding:4px 8px;font-size:11.5px}
 .days{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px}
 .days li{display:grid;grid-template-columns:44px 132px 1fr;gap:8px;align-items:baseline;padding:6px 10px;border-radius:8px;background:var(--panel);font-size:13px;border:1px solid var(--line)}
 .days li.we{border-color:var(--sun);background:var(--sun-soft)}
@@ -390,8 +402,8 @@ tr.detail>td{background:var(--bg);padding:18px;border-left:5px solid var(--lc,#8
         <label class="fld">Noches mín.<input id="f-nmin" type="number" min="1" step="1"></label>
         <label class="fld">Noches máx.<input id="f-nmax" type="number" min="1" step="1"></label>
         <label class="fld"><span id="pmax-l">Máx. $ por persona</span><input id="f-pmax" type="number" min="0" step="50"></label>
-        <label class="fld">Zarpa desde<input id="f-from" type="date"></label>
-        <label class="fld">Zarpa hasta<input id="f-to" type="date"></label>
+        <div class="fld msdd" id="f-from-wrap">Zarpa desde<button type="button" class="msdd-btn" id="f-from-btn">Cualquiera</button><div class="dpf-panel" id="f-from-panel" hidden></div></div>
+        <div class="fld msdd" id="f-to-wrap">Zarpa hasta<button type="button" class="msdd-btn" id="f-to-btn">Cualquiera</button><div class="dpf-panel" id="f-to-panel" hidden></div></div>
         <label class="fld check"><input id="f-we" type="checkbox">Salida en fin de semana o festivo</label>
         <button class="btn ghost" id="f-reset">Limpiar</button>
       </div>
@@ -434,8 +446,8 @@ tr.detail>td{background:var(--bg);padding:18px;border-left:5px solid var(--lc,#8
           <label class="fld">Noches mín.<input id="cd-nmin" type="number" min="1" step="1"></label>
           <label class="fld">Noches máx.<input id="cd-nmax" type="number" min="1" step="1"></label>
           <label class="fld">Máx. $ por persona<input id="cd-pmax" type="number" min="0" step="50"></label>
-          <label class="fld">Zarpa desde<input id="cd-from" type="date"></label>
-          <label class="fld">Zarpa hasta<input id="cd-to" type="date"></label>
+          <div class="fld msdd" id="cd-from-wrap">Zarpa desde<button type="button" class="msdd-btn" id="cd-from-btn">Cualquiera</button><div class="dpf-panel" id="cd-from-panel" hidden></div></div>
+          <div class="fld msdd" id="cd-to-wrap">Zarpa hasta<button type="button" class="msdd-btn" id="cd-to-btn">Cualquiera</button><div class="dpf-panel" id="cd-to-panel" hidden></div></div>
           <label class="fld check"><input id="cd-we" type="checkbox">Salida en fin de semana o festivo</label>
           <button class="btn ghost" id="cd-reset">Limpiar</button>
         </div>
@@ -665,21 +677,52 @@ function wireSimpleListPicker(prefix,list,onChange){
 function dateRangesHTML(prefix){return`<div id="${prefix}-rows"></div><button class="btn ghost" id="${prefix}-add" type="button">+ Añadir rango de fechas</button>`}
 function wireDateRanges(prefix,ranges,onChange){
   const renderRows=()=>{$(prefix+"-rows").innerHTML=ranges.map((r,i)=>`<div class="frow">
-    <label class="fld">Desde<input data-dr-from="${i}" type="date" value="${r.from||""}"></label>
-    <label class="fld">Hasta<input data-dr-to="${i}" type="date" value="${r.to||""}"></label>
+    ${dateFieldHTML(`${prefix}-f${i}`,"Desde")}
+    ${dateFieldHTML(`${prefix}-t${i}`,"Hasta")}
     <button class="btn ghost" type="button" data-dr-rm="${i}">✕ Quitar</button>
     </div>`).join("")||'<span class="sub">Ningún rango agregado (si no agregas ninguno, no filtra por fecha)</span>';
-    $(prefix+"-rows").querySelectorAll("[data-dr-from]").forEach(inp=>inp.onchange=()=>{const i=+inp.dataset.drFrom;ranges[i].from=inp.value;
-      if(inp.value&&!ranges[i].to){ranges[i].to=inp.value;const toInp=$(prefix+"-rows").querySelector(`[data-dr-to="${i}"]`);if(toInp)toInp.value=inp.value}
-      onChange&&onChange()});
-    $(prefix+"-rows").querySelectorAll("[data-dr-to]").forEach(inp=>inp.onchange=()=>{ranges[+inp.dataset.drTo].to=inp.value;onChange&&onChange()});
+    ranges.forEach((r,i)=>{
+      wireDateField(`${prefix}-f${i}`,r,"from",()=>onChange&&onChange());
+      wireDateField(`${prefix}-t${i}`,r,"to",()=>onChange&&onChange(),()=>{if(!r.from)return null;const[y,m]=r.from.split("-");return{y:+y,m:+m-1}});
+    });
     $(prefix+"-rows").querySelectorAll("[data-dr-rm]").forEach(b=>b.onclick=()=>{ranges.splice(+b.dataset.drRm,1);renderRows();onChange&&onChange()})};
   $(prefix+"-add").onclick=()=>{ranges.push({from:"",to:""});renderRows()};
   renderRows()
 }
 /* ---------------- multi-select dropdown (naviera, etc.) ---------------- */
-function closeAllDropdowns(except){document.querySelectorAll(".msdd-panel").forEach(p=>{if(p!==except)p.hidden=true})}
+function closeAllDropdowns(except){document.querySelectorAll(".msdd-panel,.dpf-panel").forEach(p=>{if(p!==except)p.hidden=true})}
 document.addEventListener("click",()=>closeAllDropdowns());
+const DOW_ES=["lu","ma","mi","ju","vi","sá","do"];
+const MONTH_ES=["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+function fmtDateDMY(iso){if(!iso)return"";const[y,m,d]=iso.split("-");return`${d}.${m}.${y}`}
+function dateFieldHTML(id,label){return`<div class="fld msdd" id="${id}-wrap">${esc(label)}<button type="button" class="msdd-btn" id="${id}-btn">Cualquiera</button><div class="dpf-panel" id="${id}-panel" hidden></div></div>`}
+/* state: object holding the ISO value under `key`; getHintMonth(): optional fn returning {y,m} (m=0-indexed) to open on when state has no value yet (e.g. the paired "desde" field's month) */
+function wireDateField(id,state,key,onChange,getHintMonth){
+  const wrap=$(id+"-wrap"),btn=$(id+"-btn"),panel=$(id+"-panel");
+  let view=null;
+  const refreshBtn=()=>{btn.textContent=state[key]?fmtDateDMY(state[key]):"Cualquiera"};
+  const renderCalendar=()=>{
+    const first=new Date(Date.UTC(view.y,view.m,1)),startDow=(first.getUTCDay()+6)%7,daysInMonth=new Date(Date.UTC(view.y,view.m+1,0)).getUTCDate();
+    let cells="";for(let i=0;i<startDow;i++)cells+="<span></span>";
+    for(let d=1;d<=daysInMonth;d++){const iso=`${view.y}-${String(view.m+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;cells+=`<button type="button" class="dpf-day${state[key]===iso?" sel":""}" data-iso="${iso}">${d}</button>`}
+    panel.innerHTML=`<div class="dpf-head"><button type="button" class="dpf-nav" data-nav="-1">‹</button><span>${MONTH_ES[view.m]} ${view.y}</span><button type="button" class="dpf-nav" data-nav="1">›</button></div>
+    <div class="dpf-dow">${DOW_ES.map(d=>`<span>${d}</span>`).join("")}</div>
+    <div class="dpf-grid">${cells}</div>
+    <div class="dpf-foot"><button type="button" class="btn ghost" id="${id}-clear">Limpiar</button><button type="button" class="btn ghost" id="${id}-hoy">Hoy</button></div>`;
+    panel.querySelectorAll("[data-nav]").forEach(b=>b.onclick=e=>{e.stopPropagation();view.m+=+b.dataset.nav;if(view.m<0){view.m=11;view.y--}if(view.m>11){view.m=0;view.y++}renderCalendar()});
+    panel.querySelectorAll("[data-iso]").forEach(b=>b.onclick=e=>{e.stopPropagation();state[key]=b.dataset.iso;refreshBtn();renderCalendar();onChange&&onChange()});
+    $(id+"-clear").onclick=e=>{e.stopPropagation();state[key]="";refreshBtn();renderCalendar();onChange&&onChange()};
+    $(id+"-hoy").onclick=e=>{e.stopPropagation();const t=new Date();view={y:t.getFullYear(),m:t.getMonth()};renderCalendar()}};
+  btn.onclick=e=>{e.stopPropagation();const willOpen=panel.hidden;closeAllDropdowns(willOpen?panel:null);
+    if(willOpen){let y,m;
+      if(state[key]){const[yy,mm]=state[key].split("-");y=+yy;m=+mm-1}
+      else{const hint=getHintMonth&&getHintMonth();if(hint){y=hint.y;m=hint.m}else{const t=new Date();y=t.getFullYear();m=t.getMonth()}}
+      view={y,m};renderCalendar()}
+    panel.hidden=!willOpen};
+  panel.onclick=e=>e.stopPropagation();
+  refreshBtn();
+  return refreshBtn
+}
 function wireMultiSelectDropdown(idPrefix,lines,options,onChange){
   const wrap=$(idPrefix+"-wrap"),btn=$(idPrefix+"-btn"),panel=$(idPrefix+"-panel"),allCb=$(idPrefix+"-all");
   $(idPrefix+"-opts").innerHTML=options.map(o=>`<label class="msdd-opt"><input type="checkbox" data-v="${esc(o)}">${esc(o)}</label>`).join("");
@@ -764,8 +807,8 @@ function portVisitCount(port){const k=normPort(port);let n=0;pastEntries().forEa
 function starsHTML(val,id,ro){const v=Math.round(val||0);let h=`<span class="stars${ro?" ro":""}" data-rate="${id||""}">`;for(let i=1;i<=5;i++)h+=`<button data-v="${i}" class="${i<=v?"on":""}" ${ro?"disabled":""}>★</button>`;return h+"</span>"}
 
 /* ---------------- top-level state ---------------- */
-const S={cur:"USD",sec:"buscar",subBuscar:"todos",subMis:"resumen",page:0,sort:{k:"dep",dir:1},open:new Set(),lines:[]};
-const CS={catId:null,page:0,sort:{k:"dep",dir:1},extra:{lines:[]}};
+const S={cur:"USD",sec:"buscar",subBuscar:"todos",subMis:"resumen",page:0,sort:{k:"usd",dir:1},open:new Set(),lines:[],from:"",to:""};
+const CS={catId:null,page:0,sort:{k:"usd",dir:1},extra:{lines:[],from:"",to:""}};
 
 /* ---------------- TODOS / GUARDADOS table (shared) ---------------- */
 function baseList(){return S.subBuscar==="guardados"?D.cruises.filter(isFlag):D.cruises}
@@ -773,7 +816,7 @@ let refreshFLineUI=null;
 function lineOptions(){const ls=[...new Set(D.cruises.map(c=>c.line))].filter(Boolean).sort();
 refreshFLineUI=wireMultiSelectDropdown("f-line",{get sel(){return S.lines},set sel(v){S.lines=v}},ls,()=>{S.page=0;renderRows()})}
 function sortList(list,sort){return list.slice().sort((a,b)=>{const k=sort.k,d=sort.dir,v=x=>k==="ship"?x.line+x.ship:k==="dep"?x.dep.date:k==="arr"?x.arr.date:k==="nights"?x.nights:k==="usd"?last(x).usd??1e9:(last(x).usd??1e9)/x.nights;const A=v(a),B=v(b);return(A>B?1:A<B?-1:0)*d})}
-function filtered(){const q=$("f-q").value.trim().toLowerCase(),nmin=+$("f-nmin").value||0,nmax=+$("f-nmax").value||0,pmax=+$("f-pmax").value||0,from=$("f-from").value,to=$("f-to").value,we=$("f-we").checked;
+function filtered(){const q=$("f-q").value.trim().toLowerCase(),nmin=+$("f-nmin").value||0,nmax=+$("f-nmax").value||0,pmax=+$("f-pmax").value||0,from=S.from,to=S.to,we=$("f-we").checked;
 return sortList(baseList().filter(c=>{const p=last(c);
 if(S.lines.length&&!S.lines.includes(c.line))return false;if(nmin&&c.nights<nmin)return false;if(nmax&&c.nights>nmax)return false;
 if(pmax&&p.usd!=null&&CV(p.usd)>pmax)return false;if(from&&c.dep.date<from)return false;if(to&&c.dep.date>to)return false;
@@ -832,9 +875,9 @@ $("cat-grid").querySelectorAll("[data-edit]").forEach(b=>b.onclick=()=>openCatFo
 $("cat-grid").querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>{if(!confirm("¿Borrar esta categoría?"))return;CATS=CATS.filter(c=>c.id!==b.dataset.del);persistCats();renderCategorias()})}
 
 /* ---- categoría: vista de detalle (misma tabla que TODOS, pero solo los cruceros de la categoría, sin mezclar con los filtros de TODOS) ---- */
-let refreshCDLineUI=null,cdWired=false;
+let refreshCDLineUI=null,cdWired=false,refreshCDFrom=null,refreshCDTo=null;
 function catDetailFiltered(cat){
-  const q=$("cd-q").value.trim().toLowerCase(),nmin=+$("cd-nmin").value||0,nmax=+$("cd-nmax").value||0,pmax=+$("cd-pmax").value||0,from=$("cd-from").value,to=$("cd-to").value,we=$("cd-we").checked;
+  const q=$("cd-q").value.trim().toLowerCase(),nmin=+$("cd-nmin").value||0,nmax=+$("cd-nmax").value||0,pmax=+$("cd-pmax").value||0,from=CS.extra.from,to=CS.extra.to,we=$("cd-we").checked;
   return D.cruises.filter(c=>{if(!catMatch(c,cat.filter))return false;const p=last(c);
     if(CS.extra.lines.length&&!CS.extra.lines.includes(c.line))return false;
     if(nmin&&c.nights<nmin)return false;if(nmax&&c.nights>nmax)return false;
@@ -846,9 +889,10 @@ function catDetailFiltered(cat){
 function wireCatDetailFiltersOnce(){if(cdWired)return;cdWired=true;
   const ls=[...new Set(D.cruises.map(c=>c.line))].filter(Boolean).sort();
   refreshCDLineUI=wireMultiSelectDropdown("cd-line",{get sel(){return CS.extra.lines},set sel(v){CS.extra.lines=v}},ls,()=>{CS.page=0;renderCatRows()});
-  ["cd-q","cd-nmin","cd-nmax","cd-pmax","cd-to","cd-we"].forEach(id=>$(id).addEventListener("input",()=>{CS.page=0;renderCatRows()}));
-  $("cd-from").addEventListener("input",()=>{if($("cd-from").value&&!$("cd-to").value)$("cd-to").value=$("cd-from").value;CS.page=0;renderCatRows()});
-  $("cd-reset").onclick=()=>{["cd-q","cd-nmin","cd-nmax","cd-pmax","cd-from","cd-to"].forEach(id=>$(id).value="");$("cd-we").checked=false;CS.extra.lines=[];refreshCDLineUI&&refreshCDLineUI();CS.page=0;renderCatRows()}
+  ["cd-q","cd-nmin","cd-nmax","cd-pmax","cd-we"].forEach(id=>$(id).addEventListener("input",()=>{CS.page=0;renderCatRows()}));
+  refreshCDFrom=wireDateField("cd-from",CS.extra,"from",()=>{CS.page=0;renderCatRows()});
+  refreshCDTo=wireDateField("cd-to",CS.extra,"to",()=>{CS.page=0;renderCatRows()},()=>{if(!CS.extra.from)return null;const[y,m]=CS.extra.from.split("-");return{y:+y,m:+m-1}});
+  $("cd-reset").onclick=()=>{["cd-q","cd-nmin","cd-nmax","cd-pmax"].forEach(id=>$(id).value="");$("cd-we").checked=false;CS.extra.lines=[];CS.extra.from="";CS.extra.to="";refreshCDLineUI&&refreshCDLineUI();refreshCDFrom&&refreshCDFrom();refreshCDTo&&refreshCDTo();CS.page=0;renderCatRows()}
 }
 function openCatDetail(catId){CS.catId=catId;CS.page=0;$("cat-list-view").hidden=true;$("cat-detail-view").hidden=false;wireCatDetailFiltersOnce();renderCatRows()}
 function closeCatDetail(){CS.catId=null;$("cat-detail-view").hidden=true;$("cat-list-view").hidden=false;renderCategorias()}
@@ -1364,9 +1408,11 @@ $("modal-back").addEventListener("click",e=>{if(e.target.id==="modal-back")close
 /* ---------------- misc wiring ---------------- */
 document.querySelectorAll(".cur button").forEach(b=>b.onclick=()=>{S.cur=b.dataset.c;document.querySelectorAll(".cur button").forEach(x=>x.setAttribute("aria-pressed",x===b));$("pmax-l").textContent="Máx. "+(S.cur==="EUR"?"€":"$")+" por persona";try{localStorage.setItem("cw-cur",S.cur)}catch(e){}renderRows()});
 document.querySelectorAll('th [data-sort]:not([data-tbl="cat"])').forEach(b=>b.onclick=()=>{const k=b.dataset.sort;S.sort=S.sort.k===k?{k,dir:-S.sort.dir}:{k,dir:1};renderRows()});
-["f-q","f-nmin","f-nmax","f-pmax","f-to","f-we"].forEach(id=>$(id).addEventListener("input",()=>{S.page=0;renderRows()}));
-$("f-from").addEventListener("input",()=>{if($("f-from").value&&!$("f-to").value)$("f-to").value=$("f-from").value;S.page=0;renderRows()});
-$("f-reset").onclick=()=>{["f-q","f-nmin","f-nmax","f-pmax","f-from","f-to"].forEach(id=>$(id).value="");$("f-we").checked=false;S.lines=[];refreshFLineUI&&refreshFLineUI();S.page=0;renderRows()};
+["f-q","f-nmin","f-nmax","f-pmax","f-we"].forEach(id=>$(id).addEventListener("input",()=>{S.page=0;renderRows()}));
+let refreshFFrom=null,refreshFTo=null;
+refreshFFrom=wireDateField("f-from",S,"from",()=>{S.page=0;renderRows()});
+refreshFTo=wireDateField("f-to",S,"to",()=>{S.page=0;renderRows()},()=>{if(!S.from)return null;const[y,m]=S.from.split("-");return{y:+y,m:+m-1}});
+$("f-reset").onclick=()=>{["f-q","f-nmin","f-nmax","f-pmax"].forEach(id=>$(id).value="");$("f-we").checked=false;S.lines=[];S.from="";S.to="";refreshFLineUI&&refreshFLineUI();refreshFFrom&&refreshFFrom();refreshFTo&&refreshFTo();S.page=0;renderRows()};
 try{const v=localStorage.getItem("cw-cur");if(v==="EUR"){document.querySelector('.cur [data-c="EUR"]').click()}}catch(e){}
 let stealthOn=lsGet("cw-stealth",false);
 document.documentElement.classList.toggle("stealth",stealthOn);
