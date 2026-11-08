@@ -135,6 +135,13 @@ tr.detail>td{background:var(--bg);padding:18px;border-left:5px solid var(--lc,#8
 .dpf-day.sel{background:var(--sea);color:#fff;font-weight:700}
 .dpf-foot{display:flex;justify-content:space-between;margin-top:8px;gap:6px}
 .dpf-foot .btn{padding:4px 8px;font-size:11.5px}
+.catf-summary{background:var(--sky-soft);color:var(--sky-ink);border-radius:10px;padding:10px 12px;font-size:13px;font-weight:600;line-height:1.5}
+.catf-sec{border:1px solid var(--line);border-radius:10px;padding:10px 12px 12px;margin-top:2px;transition:border-color .15s,background .15s}
+.catf-sec.active{border-color:var(--sea);background:color-mix(in srgb,var(--sea) 7%,transparent)}
+.catf-sech{margin:0 0 8px;font:700 12px var(--f-body);text-transform:uppercase;letter-spacing:.06em;color:var(--ink-2);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.catf-sec.active .catf-sech{color:var(--sea-ink)}
+.catf-sec.active .catf-sech::after{content:"✓ activo";font:700 10px var(--f-body);text-transform:none;letter-spacing:0;background:var(--sea);color:#fff;padding:2px 8px;border-radius:999px}
+.fld-filled>input,.fld-filled>select{border-color:var(--sea);box-shadow:0 0 0 1px var(--sea) inset}
 .days{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px}
 .days li{display:grid;grid-template-columns:44px 132px 1fr;gap:8px;align-items:baseline;padding:6px 10px;border-radius:8px;background:var(--panel);font-size:13px;border:1px solid var(--line)}
 .days li.we{border-color:var(--sun);background:var(--sun-soft)}
@@ -690,6 +697,19 @@ function wireDateRanges(prefix,ranges,onChange){
   $(prefix+"-add").onclick=()=>{ranges.push({from:"",to:""});renderRows()};
   renderRows()
 }
+function continentStopsHTML(prefix){return`<div id="${prefix}-rows"></div><button class="btn ghost" id="${prefix}-add" type="button">+ Añadir continente</button>`}
+function wireContinentStops(prefix,list,onChange){
+  const renderRows=()=>{$(prefix+"-rows").innerHTML=list.map((r,i)=>`<div class="frow">
+    <label class="fld grow">Continente<select data-cs-cont="${i}">${continentsList().map(c=>`<option ${r.continent===c?"selected":""}>${esc(c)}</option>`).join("")}</select></label>
+    <label class="fld">Mínimo de países distintos<input data-cs-min="${i}" type="number" min="1" step="1" value="${r.min||1}"></label>
+    <button class="btn ghost" type="button" data-cs-rm="${i}">✕ Quitar</button>
+    </div>`).join("")||'<span class="sub">Ninguno agregado (si no agregas ninguno, no filtra por continente)</span>';
+    $(prefix+"-rows").querySelectorAll("[data-cs-cont]").forEach(s=>s.onchange=()=>{list[+s.dataset.csCont].continent=s.value;onChange&&onChange()});
+    $(prefix+"-rows").querySelectorAll("[data-cs-min]").forEach(inp=>inp.oninput=()=>{list[+inp.dataset.csMin].min=+inp.value||1;onChange&&onChange()});
+    $(prefix+"-rows").querySelectorAll("[data-cs-rm]").forEach(b=>b.onclick=()=>{list.splice(+b.dataset.csRm,1);renderRows();onChange&&onChange()})};
+  $(prefix+"-add").onclick=()=>{list.push({continent:continentsList()[0]||"",min:1});renderRows()};
+  renderRows()
+}
 /* ---------------- multi-select dropdown (naviera, etc.) ---------------- */
 function closeAllDropdowns(except){document.querySelectorAll(".msdd-panel,.dpf-panel").forEach(p=>{if(p!==except)p.hidden=true})}
 document.addEventListener("click",()=>closeAllDropdowns());
@@ -762,6 +782,9 @@ function catMatch(c,f){
   if(f.depContinents&&f.depContinents.length){const dc=ALL_PORT_COUNTRY[c.dep.port]||c.depCountry;const cont=dc?CONTINENT[dc]:null;if(!cont||!f.depContinents.includes(cont))return false}
   if(f.arrContinents&&f.arrContinents.length){const ac=ALL_PORT_COUNTRY[c.arr.port]||c.arrCountry;const cont=ac?CONTINENT[ac]:null;if(!cont||!f.arrContinents.includes(cont))return false}
   if(f.countries&&f.countries.length){const cs=countries(c);if(!f.countries.some(x=>cs.includes(x)))return false}
+  if(f.continentStops&&f.continentStops.length){const cs=countries(c);
+    const ok=f.continentStops.every(r=>{if(!r.continent)return true;const n=cs.filter(x=>CONTINENT[x]===r.continent).length;return n>=(r.min||1)});
+    if(!ok)return false}
   if(f.ports&&f.ports.length){const allp=((c.days&&c.days.length?c.days.map(d=>d.port):c.ports)||[]).map(p=>String(p).toLowerCase());if(!f.ports.some(x=>allp.some(p=>p.includes(String(x).toLowerCase()))))return false}
   if(f.titleText){if(!(c.title||"").toLowerCase().includes(f.titleText.toLowerCase()))return false}
   if(f.excludeQ){const hay=[c.ship,c.line,c.title,c.dep.port,c.arr.port,...(c.ports||[]),...countries(c)].join(" ").toLowerCase();if(hay.includes(f.excludeQ.toLowerCase()))return false}
@@ -783,6 +806,7 @@ function catSummary(f){f=f||{};const parts=[];
   if(f.depContinents&&f.depContinents.length)parts.push("continente de salida: "+f.depContinents.join(", "));
   if(f.arrContinents&&f.arrContinents.length)parts.push("continente de llegada: "+f.arrContinents.join(", "));
   if(f.countries&&f.countries.length)parts.push("países parada: "+f.countries.join(", "));
+  if(f.continentStops&&f.continentStops.length)parts.push(f.continentStops.filter(r=>r.continent).map(r=>`≥${r.min||1} países de ${r.continent}`).join(" · "));
   if(f.ports&&f.ports.length)parts.push("puertos parada: "+f.ports.join(", "));
   if(f.titleText)parts.push(`nombre del viaje incluye "${f.titleText}"`);
   if(f.q)parts.push(`incluye "${f.q}"`);
@@ -924,11 +948,13 @@ const depContinentsArr=(f.depContinents||[]).slice(),arrContinentsArr=(f.arrCont
 const linesInit=(f.lines&&f.lines.length)?f.lines.slice():(f.line?[f.line]:[]);
 const shipsArr=(f.ships||[]).slice();
 const dateRangesArr=(f.dateRanges&&f.dateRanges.length)?f.dateRanges.map(r=>({from:r.from||"",to:r.to||""})):((f.fromDate||f.toDate)?[{from:f.fromDate||"",to:f.toDate||""}]:[]);
+const continentStopsArr=(f.continentStops||[]).map(r=>({continent:r.continent||"",min:r.min||1}));
 const allLines=[...new Set(D.cruises.map(c=>c.line))].filter(Boolean).sort();
 const allShips=[...new Set(D.cruises.map(c=>c.ship))].filter(Boolean).sort();
-const hd=t=>`<h3 style="margin:4px 0 0;font:700 12px var(--f-body);text-transform:uppercase;letter-spacing:.07em;color:var(--ink-2)">${t}</h3>`;
+const sec=(id,title,body)=>`<div class="catf-sec" id="${id}"><h3 class="catf-sech">${esc(title)}</h3>${body}</div>`;
 $("modal").innerHTML=`<h2>${existing?"Editar categoría":"Nueva categoría"}</h2>
 <p class="note" style="margin:0">Una categoría es solo el conjunto de filtros que definas aquí abajo: no hay condiciones ocultas ni precargadas, todo lo que la categoría usa para filtrar es lo que rellenes en este formulario. Dejar un campo vacío significa que ese filtro no aplica.</p>
+<div class="catf-summary" id="cf-summary"></div>
 <div class="frow"><label class="fld grow">Nombre<input id="cf-name" value="${esc((existing&&existing.name)||"")}"></label></div>
 <div class="frow">
 <label class="fld">Noches mín.<input id="cf-nmin" type="number" min="1" value="${f.nightsMin??""}"></label>
@@ -952,44 +978,55 @@ $("modal").innerHTML=`<h2>${existing?"Editar categoría":"Nueva categoría"}</h2
 <label class="fld grow">Incluir texto (puerto, país, ruta)<input id="cf-q" value="${esc(f.q||"")}"></label>
 <label class="fld grow">Excluir texto<input id="cf-exq" value="${esc(f.excludeQ||"")}" placeholder="ocultar si contiene…"></label>
 </div>
-${hd("Navieras específicas (basta con una; vacío = todas)")}
-${simpleListPickerHTML("cf-lines","Naviera",allLines)}
-${hd("Barcos específicos (basta con uno; vacío = todos)")}
-${simpleListPickerHTML("cf-ships","Barco",allShips)}
-${hd("Rangos de fechas de zarpe (uno o varios; vacío = cualquier fecha)")}
-${dateRangesHTML("cf-dr")}
-${hd("Continente de salida (basta con uno; vacío = cualquiera)")}
-${simpleListPickerHTML("cf-dcont","Continente",continentsList())}
-${hd("Continente de llegada (basta con uno; vacío = cualquiera)")}
-${simpleListPickerHTML("cf-acont","Continente",continentsList())}
-${hd("Puerto de salida específico (basta con uno)")}
-${portPickerHTML("cf-dp")}
-${hd("Puerto de llegada específico (basta con uno)")}
-${portPickerHTML("cf-ap")}
-${hd("País de salida específico (basta con uno)")}
-${countryPickerHTML("cf-dc")}
-${hd("País de llegada específico (basta con uno)")}
-${countryPickerHTML("cf-ac")}
-${hd("Países que visite como parada (basta con uno)")}
-${countryPickerHTML("cf-ct")}
-${hd("Puertos que visite como parada (basta con uno)")}
-${portPickerHTML("cf-pt")}
+${sec("cf-sec-lines","Navieras específicas (basta con una; vacío = todas)",simpleListPickerHTML("cf-lines","Naviera",allLines))}
+${sec("cf-sec-ships","Barcos específicos (basta con uno; vacío = todos)",simpleListPickerHTML("cf-ships","Barco",allShips))}
+${sec("cf-sec-dr","Rangos de fechas de zarpe (uno o varios; vacío = cualquier fecha)",dateRangesHTML("cf-dr"))}
+${sec("cf-sec-dcont","Continente de salida (basta con uno; vacío = cualquiera)",simpleListPickerHTML("cf-dcont","Continente",continentsList()))}
+${sec("cf-sec-acont","Continente de llegada (basta con uno; vacío = cualquiera)",simpleListPickerHTML("cf-acont","Continente",continentsList()))}
+${sec("cf-sec-dp","Puerto de salida específico (basta con uno)",portPickerHTML("cf-dp"))}
+${sec("cf-sec-ap","Puerto de llegada específico (basta con uno)",portPickerHTML("cf-ap"))}
+${sec("cf-sec-dc","País de salida específico (basta con uno)",countryPickerHTML("cf-dc"))}
+${sec("cf-sec-ac","País de llegada específico (basta con uno)",countryPickerHTML("cf-ac"))}
+${sec("cf-sec-ct","Países que visite como parada (basta con uno)",countryPickerHTML("cf-ct"))}
+${sec("cf-sec-cs","Mínimo de países por continente visitado como parada (p. ej. ≥3 países de Sudamérica)",continentStopsHTML("cf-cs"))}
+${sec("cf-sec-pt","Puertos que visite como parada (basta con uno)",portPickerHTML("cf-pt"))}
 <div class="acts"><button class="btn ghost" id="cf-cancel">Cancelar</button><button class="btn primary" id="cf-save">Guardar</button></div>`;
 $("modal-back").hidden=false;
-wireSimpleListPicker("cf-lines",linesInit);
-wireSimpleListPicker("cf-ships",shipsArr);
-wireSimpleListPicker("cf-dcont",depContinentsArr);
-wireSimpleListPicker("cf-acont",arrContinentsArr);
-wireDateRanges("cf-dr",dateRangesArr);
-wirePortPicker("cf-dp",depPortsArr);
-wirePortPicker("cf-ap",arrPortsArr);
-wireCountryPicker("cf-dc",depCountriesArr);
-wireCountryPicker("cf-ac",arrCountriesArr);
-wireCountryPicker("cf-ct",countriesArr);
-wirePortPicker("cf-pt",portsArr);
+const SECTION_TESTS={
+  "cf-sec-lines":()=>linesInit.length>0,"cf-sec-ships":()=>shipsArr.length>0,
+  "cf-sec-dr":()=>dateRangesArr.some(r=>r.from||r.to),
+  "cf-sec-dcont":()=>depContinentsArr.length>0,"cf-sec-acont":()=>arrContinentsArr.length>0,
+  "cf-sec-dp":()=>depPortsArr.length>0,"cf-sec-ap":()=>arrPortsArr.length>0,
+  "cf-sec-dc":()=>depCountriesArr.length>0,"cf-sec-ac":()=>arrCountriesArr.length>0,
+  "cf-sec-ct":()=>countriesArr.length>0,"cf-sec-cs":()=>continentStopsArr.some(r=>r.continent),
+  "cf-sec-pt":()=>portsArr.length>0
+};
+const collectFilter=()=>({nightsMin:$("cf-nmin").value||null,nightsMax:$("cf-nmax").value||null,priceMax:$("cf-pmax").value||null,priceDayMax:$("cf-pdaymax").value||null,priceCurrency:$("cf-cur").value,lines:linesInit.slice(),ships:shipsArr.slice(),shipText:$("cf-ship").value.trim()||null,titleText:$("cf-title").value.trim()||null,builtMin:$("cf-built").value||null,q:$("cf-q").value.trim()||null,excludeQ:$("cf-exq").value.trim()||null,dateRanges:dateRangesArr.filter(r=>r.from||r.to).map(r=>({from:r.from||null,to:r.to||null})),weekendOnly:$("cf-we").checked,roundtripOnly:$("cf-rt").checked,depPorts:depPortsArr.slice(),arrPorts:arrPortsArr.slice(),depCountries:depCountriesArr.slice(),arrCountries:arrCountriesArr.slice(),depContinents:depContinentsArr.slice(),arrContinents:arrContinentsArr.slice(),countries:countriesArr.slice(),ports:portsArr.slice(),continentStops:continentStopsArr.filter(r=>r.continent).map(r=>({continent:r.continent,min:r.min||1}))});
+function refreshFormState(){
+  Object.keys(SECTION_TESTS).forEach(id=>{const el=$(id);if(el)el.classList.toggle("active",SECTION_TESTS[id]())});
+  $("modal").querySelectorAll(".fld").forEach(fld=>{if(fld.closest(".catf-sec"))return;const el=fld.querySelector("input,select");if(!el)return;
+    const filled=el.type==="checkbox"?el.checked:(el.value!=null&&String(el.value).trim()!=="");
+    fld.classList.toggle("fld-filled",filled)});
+  const s=catSummary(collectFilter());
+  $("cf-summary").innerHTML=s==="Sin filtros (coincide con todos los cruceros)"?'<span class="sub">Sin filtros todavía — lo que rellenes abajo aparecerá aquí.</span>':esc(s)}
+wireSimpleListPicker("cf-lines",linesInit,refreshFormState);
+wireSimpleListPicker("cf-ships",shipsArr,refreshFormState);
+wireSimpleListPicker("cf-dcont",depContinentsArr,refreshFormState);
+wireSimpleListPicker("cf-acont",arrContinentsArr,refreshFormState);
+wireDateRanges("cf-dr",dateRangesArr,refreshFormState);
+wirePortPicker("cf-dp",depPortsArr,refreshFormState);
+wirePortPicker("cf-ap",arrPortsArr,refreshFormState);
+wireCountryPicker("cf-dc",depCountriesArr,refreshFormState);
+wireCountryPicker("cf-ac",arrCountriesArr,refreshFormState);
+wireCountryPicker("cf-ct",countriesArr,refreshFormState);
+wireContinentStops("cf-cs",continentStopsArr,refreshFormState);
+wirePortPicker("cf-pt",portsArr,refreshFormState);
+$("modal").addEventListener("input",refreshFormState);
+$("modal").addEventListener("change",refreshFormState);
+refreshFormState();
 $("cf-cancel").onclick=closeModal;
 $("cf-save").onclick=()=>{const name=$("cf-name").value.trim();if(!name){alert("Ponle un nombre a la categoría");return}
-const filter={nightsMin:$("cf-nmin").value||null,nightsMax:$("cf-nmax").value||null,priceMax:$("cf-pmax").value||null,priceDayMax:$("cf-pdaymax").value||null,priceCurrency:$("cf-cur").value,lines:linesInit.slice(),ships:shipsArr.slice(),shipText:$("cf-ship").value.trim()||null,titleText:$("cf-title").value.trim()||null,builtMin:$("cf-built").value||null,q:$("cf-q").value.trim()||null,excludeQ:$("cf-exq").value.trim()||null,dateRanges:dateRangesArr.filter(r=>r.from||r.to).map(r=>({from:r.from||null,to:r.to||null})),weekendOnly:$("cf-we").checked,roundtripOnly:$("cf-rt").checked,depPorts:depPortsArr.slice(),arrPorts:arrPortsArr.slice(),depCountries:depCountriesArr.slice(),arrCountries:arrCountriesArr.slice(),depContinents:depContinentsArr.slice(),arrContinents:arrContinentsArr.slice(),countries:countriesArr.slice(),ports:portsArr.slice()};
+const filter=collectFilter();
 if(existing){existing.name=name;existing.filter=filter}else{CATS.push({id:"cat-"+Date.now(),name,filter})}
 persistCats();closeModal();renderCategorias();renderRows()}}
 $("cat-new").onclick=()=>openCatForm(null);
