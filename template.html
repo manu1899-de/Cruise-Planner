@@ -417,6 +417,7 @@ tr.detail>td{background:var(--bg);padding:18px;border-left:5px solid var(--lc,#8
         <div class="fld msdd" id="f-from-wrap">Zarpa desde<button type="button" class="msdd-btn" id="f-from-btn">Cualquiera</button><div class="dpf-panel" id="f-from-panel" hidden></div></div>
         <div class="fld msdd" id="f-to-wrap">Zarpa hasta<button type="button" class="msdd-btn" id="f-to-btn">Cualquiera</button><div class="dpf-panel" id="f-to-panel" hidden></div></div>
         <label class="fld check"><input id="f-we" type="checkbox">Salida en fin de semana o festivo</label>
+        <label class="fld check"><input id="f-hasprice" type="checkbox" checked>Ocultar cruceros sin precio</label>
         <button class="btn ghost" id="f-reset">Limpiar</button>
       </div>
       <details class="catf-group" id="f-more-wrap">
@@ -465,6 +466,7 @@ tr.detail>td{background:var(--bg);padding:18px;border-left:5px solid var(--lc,#8
           <div class="fld msdd" id="cd-from-wrap">Zarpa desde<button type="button" class="msdd-btn" id="cd-from-btn">Cualquiera</button><div class="dpf-panel" id="cd-from-panel" hidden></div></div>
           <div class="fld msdd" id="cd-to-wrap">Zarpa hasta<button type="button" class="msdd-btn" id="cd-to-btn">Cualquiera</button><div class="dpf-panel" id="cd-to-panel" hidden></div></div>
           <label class="fld check"><input id="cd-we" type="checkbox">Salida en fin de semana o festivo</label>
+          <label class="fld check"><input id="cd-hasprice" type="checkbox" checked>Ocultar cruceros sin precio</label>
           <button class="btn ghost" id="cd-reset">Limpiar</button>
         </div>
         <div class="tbl-wrap"><table>
@@ -921,8 +923,9 @@ let refreshFLineUI=null;
 function lineOptions(){const ls=[...new Set(D.cruises.map(c=>c.line))].filter(Boolean).sort();
 refreshFLineUI=wireMultiSelectDropdown("f-line",{get sel(){return S.lines},set sel(v){S.lines=v}},ls,()=>{S.page=0;renderRows()})}
 function sortList(list,sort){return list.slice().sort((a,b)=>{const k=sort.k,d=sort.dir,v=x=>k==="ship"?x.line+x.ship:k==="dep"?x.dep.date:k==="arr"?x.arr.date:k==="nights"?x.nights:k==="usd"?last(x).usd??1e9:(last(x).usd??1e9)/x.nights;const A=v(a),B=v(b);return(A>B?1:A<B?-1:0)*d})}
-function filtered(){const q=$("f-q").value.trim().toLowerCase(),nmin=+$("f-nmin").value||0,nmax=+$("f-nmax").value||0,pmax=+$("f-pmax").value||0,from=S.from,to=S.to,we=$("f-we").checked;
+function filtered(){const q=$("f-q").value.trim().toLowerCase(),nmin=+$("f-nmin").value||0,nmax=+$("f-nmax").value||0,pmax=+$("f-pmax").value||0,from=S.from,to=S.to,we=$("f-we").checked,hasPriceOnly=$("f-hasprice").checked;
 return sortList(baseList().filter(c=>{const p=last(c);
+if(hasPriceOnly&&p.usd==null)return false;
 if(S.lines.length&&!S.lines.includes(c.line))return false;if(nmin&&c.nights<nmin)return false;if(nmax&&c.nights>nmax)return false;
 if(pmax&&p.usd!=null&&CV(p.usd)>pmax)return false;if(from&&c.dep.date<from)return false;if(to&&c.dep.date>to)return false;
 if(we){const i=dinfo(c.dep.date);if(!i.we&&!i.hol)return false}
@@ -983,8 +986,9 @@ $("cat-grid").querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>{if(!confi
 /* ---- categoría: vista de detalle (misma tabla que TODOS, pero solo los cruceros de la categoría, sin mezclar con los filtros de TODOS) ---- */
 let refreshCDLineUI=null,cdWired=false,refreshCDFrom=null,refreshCDTo=null;
 function catDetailFiltered(cat){
-  const q=$("cd-q").value.trim().toLowerCase(),nmin=+$("cd-nmin").value||0,nmax=+$("cd-nmax").value||0,pmax=+$("cd-pmax").value||0,from=CS.extra.from,to=CS.extra.to,we=$("cd-we").checked;
+  const q=$("cd-q").value.trim().toLowerCase(),nmin=+$("cd-nmin").value||0,nmax=+$("cd-nmax").value||0,pmax=+$("cd-pmax").value||0,from=CS.extra.from,to=CS.extra.to,we=$("cd-we").checked,hasPriceOnly=$("cd-hasprice").checked;
   return D.cruises.filter(c=>{if(!catMatch(c,cat.filter))return false;const p=last(c);
+    if(hasPriceOnly&&p.usd==null)return false;
     if(CS.extra.lines.length&&!CS.extra.lines.includes(c.line))return false;
     if(nmin&&c.nights<nmin)return false;if(nmax&&c.nights>nmax)return false;
     if(pmax&&p.usd!=null&&CV(p.usd)>pmax)return false;if(from&&c.dep.date<from)return false;if(to&&c.dep.date>to)return false;
@@ -995,10 +999,10 @@ function catDetailFiltered(cat){
 function wireCatDetailFiltersOnce(){if(cdWired)return;cdWired=true;
   const ls=[...new Set(D.cruises.map(c=>c.line))].filter(Boolean).sort();
   refreshCDLineUI=wireMultiSelectDropdown("cd-line",{get sel(){return CS.extra.lines},set sel(v){CS.extra.lines=v}},ls,()=>{CS.page=0;renderCatRows()});
-  ["cd-q","cd-nmin","cd-nmax","cd-pmax","cd-we"].forEach(id=>$(id).addEventListener("input",()=>{CS.page=0;renderCatRows()}));
+  ["cd-q","cd-nmin","cd-nmax","cd-pmax","cd-we","cd-hasprice"].forEach(id=>$(id).addEventListener("input",()=>{CS.page=0;renderCatRows()}));
   refreshCDFrom=wireDateField("cd-from",CS.extra,"from",()=>{CS.page=0;renderCatRows()});
   refreshCDTo=wireDateField("cd-to",CS.extra,"to",()=>{CS.page=0;renderCatRows()},()=>{if(!CS.extra.from)return null;const[y,m]=CS.extra.from.split("-");return{y:+y,m:+m-1}});
-  $("cd-reset").onclick=()=>{["cd-q","cd-nmin","cd-nmax","cd-pmax"].forEach(id=>$(id).value="");$("cd-we").checked=false;CS.extra.lines=[];CS.extra.from="";CS.extra.to="";refreshCDLineUI&&refreshCDLineUI();refreshCDFrom&&refreshCDFrom();refreshCDTo&&refreshCDTo();CS.page=0;renderCatRows()}
+  $("cd-reset").onclick=()=>{["cd-q","cd-nmin","cd-nmax","cd-pmax"].forEach(id=>$(id).value="");$("cd-we").checked=false;$("cd-hasprice").checked=true;CS.extra.lines=[];CS.extra.from="";CS.extra.to="";refreshCDLineUI&&refreshCDLineUI();refreshCDFrom&&refreshCDFrom();refreshCDTo&&refreshCDTo();CS.page=0;renderCatRows()}
 }
 function openCatDetail(catId){CS.catId=catId;CS.page=0;$("cat-list-view").hidden=true;$("cat-detail-view").hidden=false;wireCatDetailFiltersOnce();renderCatRows()}
 function closeCatDetail(){CS.catId=null;$("cat-detail-view").hidden=true;$("cat-list-view").hidden=false;renderCategorias()}
@@ -1519,7 +1523,7 @@ $("modal-back").addEventListener("click",e=>{if(e.target.id==="modal-back")close
 /* ---------------- misc wiring ---------------- */
 document.querySelectorAll(".cur button").forEach(b=>b.onclick=()=>{S.cur=b.dataset.c;document.querySelectorAll(".cur button").forEach(x=>x.setAttribute("aria-pressed",x===b));$("pmax-l").textContent="Máx. "+(S.cur==="EUR"?"€":"$")+" por persona";try{localStorage.setItem("cw-cur",S.cur)}catch(e){}renderRows()});
 document.querySelectorAll('th [data-sort]:not([data-tbl="cat"])').forEach(b=>b.onclick=()=>{const k=b.dataset.sort;S.sort=S.sort.k===k?{k,dir:-S.sort.dir}:{k,dir:1};renderRows()});
-["f-q","f-nmin","f-nmax","f-pmax","f-we"].forEach(id=>$(id).addEventListener("input",()=>{S.page=0;renderRows()}));
+["f-q","f-nmin","f-nmax","f-pmax","f-we","f-hasprice"].forEach(id=>$(id).addEventListener("input",()=>{S.page=0;renderRows()}));
 let refreshFFrom=null,refreshFTo=null;
 refreshFFrom=wireDateField("f-from",S,"from",()=>{S.page=0;renderRows()});
 refreshFTo=wireDateField("f-to",S,"to",()=>{S.page=0;renderRows()},()=>{if(!S.from)return null;const[y,m]=S.from.split("-");return{y:+y,m:+m-1}});
@@ -1530,7 +1534,7 @@ function renderFMore(){
   wireLocationRole("f-stop",S.stopLoc,()=>{S.page=0;renderRows()})
 }
 renderFMore();
-$("f-reset").onclick=()=>{["f-q","f-nmin","f-nmax","f-pmax"].forEach(id=>$(id).value="");$("f-we").checked=false;S.lines=[];S.from="";S.to="";S.depLoc=initLocEmpty();S.arrLoc=initLocEmpty();S.stopLoc=initLocEmpty();renderFMore();refreshFLineUI&&refreshFLineUI();refreshFFrom&&refreshFFrom();refreshFTo&&refreshFTo();S.page=0;renderRows()};
+$("f-reset").onclick=()=>{["f-q","f-nmin","f-nmax","f-pmax"].forEach(id=>$(id).value="");$("f-we").checked=false;$("f-hasprice").checked=true;S.lines=[];S.from="";S.to="";S.depLoc=initLocEmpty();S.arrLoc=initLocEmpty();S.stopLoc=initLocEmpty();renderFMore();refreshFLineUI&&refreshFLineUI();refreshFFrom&&refreshFFrom();refreshFTo&&refreshFTo();S.page=0;renderRows()};
 try{const v=localStorage.getItem("cw-cur");if(v==="EUR"){document.querySelector('.cur [data-c="EUR"]').click()}}catch(e){}
 let stealthOn=lsGet("cw-stealth",false);
 document.documentElement.classList.toggle("stealth",stealthOn);
