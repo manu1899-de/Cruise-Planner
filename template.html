@@ -1544,8 +1544,16 @@ document.addEventListener("click",async e=>{
   const orig=btn.textContent;btn.textContent="Generando…";btn.disabled=true;
   try{
     const bg=getComputedStyle(document.body).backgroundColor;
-    const canvas=await html2canvas(el,{backgroundColor:bg,scale:2,useCORS:true,imageTimeout:8000,onclone:doc=>{
-      doc.querySelectorAll("img").forEach(img=>{if(!img.src)return;img.crossOrigin="anonymous";img.src=shotProxyUrl(img.src)})
+    const canvas=await html2canvas(el,{backgroundColor:bg,scale:2,useCORS:true,imageTimeout:10000,onclone:async doc=>{
+      const imgs=[...doc.querySelectorAll("img")].filter(img=>img.src&&!img.src.startsWith("data:"));
+      await Promise.all(imgs.map(async img=>{
+        try{
+          const resp=await fetch(shotProxyUrl(img.src),{mode:"cors"});
+          if(!resp.ok)throw new Error("http "+resp.status);
+          const blob=await resp.blob();
+          img.src=URL.createObjectURL(blob)
+        }catch(err){/* deja la imagen como estaba; si no se puede leer, html2canvas la omite en vez de fallar toda la captura */}
+      }))
     }});
     canvas.toBlob(async blob=>{
       if(!blob){btn.textContent="✕ Error";setTimeout(()=>{btn.textContent=orig;btn.disabled=false},1800);return}
