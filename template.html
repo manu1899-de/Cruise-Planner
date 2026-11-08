@@ -797,9 +797,9 @@ function wireMultiSelectDropdown(idPrefix,lines,options,onChange){
   const wrap=$(idPrefix+"-wrap"),btn=$(idPrefix+"-btn"),panel=$(idPrefix+"-panel"),allCb=$(idPrefix+"-all");
   $(idPrefix+"-opts").innerHTML=options.map(o=>`<label class="msdd-opt"><input type="checkbox" data-v="${esc(o)}">${esc(o)}</label>`).join("");
   const opts=[...panel.querySelectorAll("[data-v]")];
-  const refresh=()=>{const sel=lines.sel;const allSel=sel.length===0||sel.length===opts.length;allCb.checked=allSel;opts.forEach(o=>o.checked=sel.length===0?true:sel.includes(o.dataset.v));
-    btn.textContent=allSel?"Todas":sel.length===1?sel[0]:`${sel.length} navieras`};
-  allCb.onclick=e=>{e.stopPropagation();lines.sel=opts.map(o=>o.dataset.v);refresh();onChange&&onChange()};
+  const refresh=()=>{const sel=lines.sel;const none=sel.length===1&&sel[0]==="__none__";const allSel=!none&&(sel.length===0||sel.length===opts.length);allCb.checked=allSel;opts.forEach(o=>o.checked=none?false:sel.length===0?true:sel.includes(o.dataset.v));
+    btn.textContent=allSel?"Todas":none?"Ninguna":sel.length===1?sel[0]:`${sel.length} navieras`};
+  allCb.onclick=e=>{e.stopPropagation();lines.sel=allCb.checked?opts.map(o=>o.dataset.v):["__none__"];refresh();onChange&&onChange()};
   opts.forEach(o=>o.onclick=e=>{e.stopPropagation();let s=opts.filter(x=>x.checked).map(x=>x.dataset.v);
     if(s.length===opts.length)s=[];
     lines.sel=s;refresh();onChange&&onChange()});
