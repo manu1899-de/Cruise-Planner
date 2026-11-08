@@ -51,6 +51,16 @@ def clean(x):
     return re.sub(r"\s+", " ", html.unescape(re.sub(r"<[^>]+>", " ", x))).strip()
 
 
+# El listado de busqueda devuelve el nombre "oficial" de la linea (ej "Royal Caribbean Cruises",
+# "MSC Cruises"), pero ships.json / cw_data.json usan la forma corta ("Royal Caribbean", "MSC").
+# Normalizamos para que la continuidad del historial de precios y el flag "loyalty" en gen.py sigan
+# funcionando igual que con el crawler por barco.
+LINE_NORMALIZE = {
+    "Royal Caribbean Cruises": "Royal Caribbean",
+    "MSC Cruises": "MSC",
+}
+
+
 def parse_rows(s):
     out = []
     for r in re.split(r"<tr>", s)[1:]:
@@ -69,6 +79,7 @@ def parse_rows(s):
         url_m = re.search(r'href="(/itineraries/[^"]+\.html)', r)
         promos = [clean(p) for p in re.findall(r'title="Click to Open - Click to Close">([^<]+)</a>', r)]
         shipslug = ship.lower().replace(" ", "-").replace("'", "")
+        line = LINE_NORMALIZE.get(line, line)
         out.append(dict(
             line=line, shipSlug=shipslug, ship=ship,
             dateText=date, title=title, fromTo=f"From {start} to {end}",

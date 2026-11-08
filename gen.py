@@ -199,7 +199,22 @@ def main():
         c["cats"] = classify(c)
         c["note"] = ("Promociones: " + "; ".join(r["promos"])) if r["promos"] else ""
         cruises.append(c)
+    # Desde que el crawl diario puede cubrir solo una parte del catalogo (ver search_crawl.py:
+    # algunos dias se prioriza MSC/Royal, el resto queda para otro ciclo), los cruceros que ya
+    # estaban en cw_data.json pero no se volvieron a ver hoy NO se descartan: se conservan tal
+    # cual (con su precio/historial de la ultima vez que se chequearon) en vez de perderse.
+    seen_ids = {c["id"] for c in cruises}
+    carried = 0
+    for old_id, oc in known_by_id.items():
+        if old_id in seen_ids:
+            continue
+        dep_date_old = (oc.get("dep") or {}).get("date")
+        if not dep_date_old or dep_date_old < TODAY:
+            continue  # ya zarpo, no tiene sentido seguir mostrandolo
+        cruises.append(oc)
+        carried += 1
     print(f"detail matched: {n_detail}/{len(raw)}, specs matched: {n_specs}/{len(raw)}")
+    print(f"carried over sin re-chequear hoy: {carried}")
     st["lastRun"] = TODAY
     st["catalogCount"] = len(cruises) + hidden
     st["catalogStatus"] = os.environ.get("STATUS", "Línea base: primera extracción completa. NEW se calcula a partir de la próxima revisión.")
