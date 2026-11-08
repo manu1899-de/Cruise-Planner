@@ -6,6 +6,7 @@
 <title>CRUISE - PLANNER</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Public+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
 /* Layout: harbour departure board — navy masthead, coloured line stripes, expandable voyage cards */
 :root{
@@ -96,7 +97,9 @@ tr.row .flagbtn,tr.row a.book{cursor:pointer}
 .flagbtn[aria-pressed="true"]{color:var(--sun)}
 .exp{border:1px solid var(--line-2);background:var(--panel);color:var(--ink);border-radius:8px;width:30px;height:30px;cursor:pointer}
 tr.detail>td{background:var(--bg);padding:18px;border-left:5px solid var(--lc,#888)}
-.dgrid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1.1fr) minmax(0,.9fr);gap:22px}
+.dgrid-wrap{position:relative}
+.shot-btn{position:absolute;top:-4px;right:0;z-index:2;font-size:12px;padding:5px 10px}
+.dgrid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1.1fr) minmax(0,.9fr);gap:22px;padding-top:6px}
 @media (max-width:980px){.dgrid{grid-template-columns:1fr}}
 .dgrid h3{font:700 12px var(--f-body);text-transform:uppercase;letter-spacing:.08em;color:var(--ink-2);margin:0 0 10px}
 .map{border-radius:10px;overflow:hidden;border:1px solid var(--line);background:var(--panel)}
@@ -794,9 +797,9 @@ function wireMultiSelectDropdown(idPrefix,lines,options,onChange){
   const wrap=$(idPrefix+"-wrap"),btn=$(idPrefix+"-btn"),panel=$(idPrefix+"-panel"),allCb=$(idPrefix+"-all");
   $(idPrefix+"-opts").innerHTML=options.map(o=>`<label class="msdd-opt"><input type="checkbox" data-v="${esc(o)}">${esc(o)}</label>`).join("");
   const opts=[...panel.querySelectorAll("[data-v]")];
-  const refresh=()=>{const sel=lines.sel;const allSel=sel.length===0||sel.length===opts.length;allCb.checked=allSel;opts.forEach(o=>o.checked=sel.length===0?true:sel.includes(o.dataset.v));
-    btn.textContent=allSel?"Todas":sel.length===1?sel[0]:`${sel.length} navieras`};
-  allCb.onclick=e=>{e.stopPropagation();lines.sel=opts.map(o=>o.dataset.v);refresh();onChange&&onChange()};
+  const refresh=()=>{const sel=lines.sel;const none=sel.length===1&&sel[0]==="__none__";const allSel=!none&&(sel.length===0||sel.length===opts.length);allCb.checked=allSel;opts.forEach(o=>o.checked=none?false:sel.length===0?true:sel.includes(o.dataset.v));
+    btn.textContent=allSel?"Todas":none?"Ninguna":sel.length===1?sel[0]:`${sel.length} navieras`};
+  allCb.onclick=e=>{e.stopPropagation();lines.sel=allCb.checked?opts.map(o=>o.dataset.v):["__none__"];refresh();onChange&&onChange()};
   opts.forEach(o=>o.onclick=e=>{e.stopPropagation();let s=opts.filter(x=>x.checked).map(x=>x.dataset.v);
     if(s.length===opts.length)s=[];
     lines.sel=s;refresh();onChange&&onChange()});
@@ -944,7 +947,7 @@ window.mapFallback=function(id){const c=D.cruises.find(x=>x.id===id);const el=do
 function detail(c){const L=lc(c.line),cg=countryCities(c),off=L[2]?`https://www.${L[2]}`:null,bd=businessDays(c);const mn=Math.min(...(c.history||[]).map(h=>h.usd).filter(v=>v!=null));
 const hist=(c.history||[]).slice().reverse().map(h=>`<tr><td class="num">${h.date.split("-").reverse().join(".")}</td><td class="r num">${M(h.usd,h.eur)}</td><td class="r num">${M(h.usd!=null?h.usd*2:null,h.eur!=null?h.eur*2:null)}</td></tr>`).join("");
 const sr=shipRating(c.ship);
-return`<tr class="detail" style="--lc:${L[1]}"><td colspan="10"><div class="dgrid">
+return`<tr class="detail" style="--lc:${L[1]}"><td colspan="10"><div class="dgrid-wrap" id="dgrid-wrap-${esc(c.id)}"><button class="btn ghost shot-btn" type="button" data-shot="${esc(c.id)}" title="Copiar una captura de este crucero al portapapeles">📋 Copiar imagen</button><div class="dgrid" id="dgrid-${esc(c.id)}">
 <div><h3>Ruta</h3>${c.map?`<div class="map" id="map-${esc(c.id)}"><img src="${esc(c.map)}" alt="Mapa de la ruta" loading="lazy" onerror="mapFallback('${esc(c.id)}')"><div class="cap">Mapa: iCruise</div></div>`:routeMap(c)}
 <h3 style="margin-top:14px">Países</h3><div class="ctrygrp">${cg.length?cg.map(g=>`<div class="g"><span class="flagc">${flagTag(g.country)}</span><div><div class="cname">${esc(g.country)}</div><div class="clist">${g.cities.map(esc).join(" · ")}</div></div></div>`).join(""):'<span class="sub">Sin dato</span>'}</div></div>
 <div><h3>Día a día · ${esc(c.title||"")}<span class="bizdays">${bd} días hábiles de ${c.nights+1}</span></h3>${days(c)}</div>
@@ -953,7 +956,7 @@ ${(c.promos||[]).length?`<p class="note"><b>Promociones:</b> ${c.promos.map(esc)
 <h3 style="margin-top:14px">Historial de precio</h3><table class="hist"><thead><tr><th>Revisión</th><th class="r">Por persona</th><th class="r">Dos personas</th></tr></thead><tbody>${hist}</tbody></table>
 <p class="note">Mínimo registrado: <span class="num">${M(isFinite(mn)?mn:null)}</span></p>
 <p style="margin:12px 0 0"><a class="btn book" href="${esc(c.url)}" target="_blank" rel="noopener">Reservar en iCruise ↗</a></p></div>
-</div></td></tr>`}
+</div></div></td></tr>`}
 function rowHTML(c){const L=lc(c.line),p=last(c),o=S.open.has(c.id),cg=countryCities(c),sr=shipRating(c.ship);
 return`<tr class="row" style="--lc:${L[1]}" data-rowid="${esc(c.id)}"><td><button class="flagbtn" data-flag="${c.id}" aria-pressed="${isFlag(c)}" title="Guardar crucero">⚑</button></td>
 <td><div class="rowwrap">${L[3]?`<img class="llogo-lg" src="${esc(L[3])}" alt="" onerror="this.remove()">`:""}<div class="rowtext"><div class="rowtitle">${esc(c.title||c.ship)}</div><div class="sub"><b>${esc(c.line)}</b> · ${esc(c.ship)}${sr?` · <span class="shiprating">★ ${sr.toFixed(1)}</span>`:""}</div>${cg.length?`<div class="ctrysum">${cg.map(g=>`<span title="${esc(g.country+": "+g.cities.join(", "))}">${flagTag(g.country)}</span>`).join("")}</div>`:""}<div>${pills(c)}</div></div></div></td>
@@ -1520,6 +1523,53 @@ $("modal").innerHTML=`<h2>Reglas e instrucciones</h2><div class="tbl-wrap" style
 $("modal-back").hidden=false;$("info-close").onclick=closeModal};
 $("modal-back").addEventListener("click",e=>{if(e.target.id==="modal-back")closeModal()});
 
+/* ---------------- captura de crucero (copiar imagen al portapapeles) ---------------- */
+/* los logos de navieras y los mapas de ruta vienen de un CDN que no manda cabeceras CORS, así que
+   html2canvas no puede leer esos píxeles y los deja en blanco; los reescribimos a través de un proxy
+   de imágenes que sí manda CORS (flagcdn.com, usado para las banderas, ya las manda y se deja igual). */
+function shotProxyUrl(src){
+  try{
+    const u=new URL(src,location.href);
+    if(u.protocol==="data:")return src;
+    if(u.hostname==="flagcdn.com")return src;
+    return "https://images.weserv.nl/?url="+encodeURIComponent(u.hostname+u.pathname+u.search)
+  }catch(e){return src}
+}
+document.addEventListener("click",async e=>{
+  const btn=e.target.closest("[data-shot]");if(!btn)return;
+  e.stopPropagation();
+  const id=btn.dataset.shot,el=$("dgrid-"+id);
+  if(!el){return}
+  if(typeof html2canvas==="undefined"){alert("No se pudo generar la imagen: no cargó la librería (revisa tu conexión a internet).");return}
+  const orig=btn.textContent;btn.textContent="Generando…";btn.disabled=true;
+  try{
+    const bg=getComputedStyle(document.body).backgroundColor;
+    const canvas=await html2canvas(el,{backgroundColor:bg,scale:2,useCORS:true,imageTimeout:10000,onclone:async doc=>{
+      const imgs=[...doc.querySelectorAll("img")].filter(img=>img.src&&!img.src.startsWith("data:"));
+      await Promise.all(imgs.map(async img=>{
+        try{
+          const resp=await fetch(shotProxyUrl(img.src),{mode:"cors"});
+          if(!resp.ok)throw new Error("http "+resp.status);
+          const blob=await resp.blob();
+          img.src=URL.createObjectURL(blob)
+        }catch(err){/* deja la imagen como estaba; si no se puede leer, html2canvas la omite en vez de fallar toda la captura */}
+      }))
+    }});
+    canvas.toBlob(async blob=>{
+      if(!blob){btn.textContent="✕ Error";setTimeout(()=>{btn.textContent=orig;btn.disabled=false},1800);return}
+      try{
+        await navigator.clipboard.write([new ClipboardItem({"image/png":blob})]);
+        btn.textContent="✓ Copiado al portapapeles"
+      }catch(err){
+        const url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=`crucero-${id}.png`;document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);
+        btn.textContent="✓ Descargada (no se pudo copiar)"
+      }
+      setTimeout(()=>{btn.textContent=orig;btn.disabled=false},2200)
+    },"image/png")
+  }catch(err){
+    btn.textContent="✕ Error";setTimeout(()=>{btn.textContent=orig;btn.disabled=false},1800)
+  }
+});
 /* ---------------- misc wiring ---------------- */
 document.querySelectorAll(".cur button").forEach(b=>b.onclick=()=>{S.cur=b.dataset.c;document.querySelectorAll(".cur button").forEach(x=>x.setAttribute("aria-pressed",x===b));$("pmax-l").textContent="Máx. "+(S.cur==="EUR"?"€":"$")+" por persona";try{localStorage.setItem("cw-cur",S.cur)}catch(e){}renderRows()});
 document.querySelectorAll('th [data-sort]:not([data-tbl="cat"])').forEach(b=>b.onclick=()=>{const k=b.dataset.sort;S.sort=S.sort.k===k?{k,dir:-S.sort.dir}:{k,dir:1};renderRows()});
