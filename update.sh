@@ -16,7 +16,7 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 
-: "${TODAY:?set TODAY=YYYY-MM-DD before running this script}"
+TODAY="${TODAY:-$(date -u +%Y-%m-%d)}"
 
 echo "== wiping crawl resume-state so all ships are re-checked today =="
 rm -f state.json log.txt
