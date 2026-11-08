@@ -19,12 +19,25 @@
   --f-body:"Public Sans",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
   --f-mono:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
 }
-@media (prefers-color-scheme:dark){:root{
+@media (prefers-color-scheme:dark){:root:not(.cw-light){
   --bg:#08131B;--panel:#0F1E28;--ink:#E3ECF1;--ink-2:#A8BAC6;--ink-3:#7A8C98;--line:#1E313D;--line-2:#2F4552;
   --navy:#0A1B30;--navy-2:#13294A;--sea:#3CC3D1;--sea-soft:#0F3439;--sea-ink:#9AE3EA;
   --coral:#FF7A63;--coral-soft:#3A1C17;--sun:#FFC23D;--sun-soft:#3A2D0C;--sun-ink:#FFD57A;
   --green:#5FD08F;--green-soft:#123222;--red:#FF7B7B;--red-soft:#3A1717;--violet:#A993F0;--violet-soft:#241C3D;
   --sky-soft:#152740;--sky-ink:#A9C4F0;color-scheme:dark}}
+:root.cw-dark{
+  --bg:#08131B;--panel:#0F1E28;--ink:#E3ECF1;--ink-2:#A8BAC6;--ink-3:#7A8C98;--line:#1E313D;--line-2:#2F4552;
+  --navy:#0A1B30;--navy-2:#13294A;--sea:#3CC3D1;--sea-soft:#0F3439;--sea-ink:#9AE3EA;
+  --coral:#FF7A63;--coral-soft:#3A1C17;--sun:#FFC23D;--sun-soft:#3A2D0C;--sun-ink:#FFD57A;
+  --green:#5FD08F;--green-soft:#123222;--red:#FF7B7B;--red-soft:#3A1717;--violet:#A993F0;--violet-soft:#241C3D;
+  --sky-soft:#152740;--sky-ink:#A9C4F0;color-scheme:dark}
+:root.cw-light{
+  --bg:#EEF3F6;--panel:#FFFFFF;--ink:#0E1C26;--ink-2:#46596A;--ink-3:#7D8E9B;
+  --line:#D8E2E8;--line-2:#B9C8D2;
+  --navy:#0B2545;--navy-2:#13315C;--sea:#0A8F9E;--sea-soft:#D5F1F3;--sea-ink:#056470;
+  --coral:#E8553E;--coral-soft:#FDE3DD;--sun:#F2A900;--sun-soft:#FFF1CC;--sun-ink:#8A5A00;
+  --green:#178A4C;--green-soft:#D9F2E3;--red:#C62F2F;--red-soft:#FBE0E0;--violet:#6B4FBB;--violet-soft:#ECE6FB;
+  --sky-soft:#E3EEFB;--sky-ink:#244C8F;color-scheme:light}
 *{box-sizing:border-box}
 html,body{margin:0}
 body{background:var(--bg);color:var(--ink);font:15px/1.55 var(--f-body)}
@@ -47,7 +60,8 @@ html.stealth .flagimg,html.stealth .llogo,html.stealth .itin-photo,html.stealth 
 .topnav{display:flex;gap:10px}
 .topnav button{flex:0 0 auto;border:0;background:var(--panel);color:var(--ink-2);font:800 15px var(--f-display);padding:12px 20px;border-radius:12px 12px 0 0;cursor:pointer;border:1px solid var(--line);border-bottom:3px solid transparent}
 .topnav button[aria-selected="true"]{color:var(--navy);border-bottom-color:var(--coral);background:var(--panel)}
-@media (prefers-color-scheme:dark){.topnav button[aria-selected="true"]{color:#fff}}
+@media (prefers-color-scheme:dark){:root:not(.cw-light) .topnav button[aria-selected="true"]{color:#fff}}
+:root.cw-dark .topnav button[aria-selected="true"]{color:#fff}
 .menu{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px}
 .mi{flex:0 0 auto;border:1px solid var(--line-2);background:var(--panel);color:var(--ink);font:600 14px var(--f-body);padding:8px 14px;border-radius:999px;cursor:pointer;display:flex;gap:8px;align-items:center}
 .mi .n{font:500 12px var(--f-mono);background:var(--bg);border-radius:999px;padding:1px 8px}
@@ -216,7 +230,8 @@ tr.detail>td{background:var(--bg);padding:18px;border-left:5px solid var(--lc,#8
 .statgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
 .statcard{background:var(--panel);border:1px solid var(--line);border-top:4px solid var(--lc,var(--sea));border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:4px}
 .statcard .v{font:800 30px var(--f-display);color:var(--lc,var(--navy))}
-@media (prefers-color-scheme:dark){.statcard .v{color:var(--lc,#fff)}}
+@media (prefers-color-scheme:dark){:root:not(.cw-light) .statcard .v{color:var(--lc,#fff)}}
+:root.cw-dark .statcard .v{color:var(--lc,#fff)}
 .statcard .l{font-size:12px;color:var(--ink-2);font-weight:600}
 .statcard.hero-card{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.22);border-top:4px solid var(--lc,var(--sun))}
 .statcard.hero-card .v{color:#fff}
@@ -377,11 +392,15 @@ tr.detail>td{background:var(--bg);padding:18px;border-left:5px solid var(--lc,#8
 @media (max-width:760px){.resumen-grid2{grid-template-columns:1fr}}
 @media (max-width:640px){.mast h1{font-size:26px}.hide-sm{display:none}.days li{grid-template-columns:38px 1fr}.days li .ds{grid-column:2}.dgrid{grid-template-columns:1fr}.barrow{grid-template-columns:100px 1fr auto}}
 @media (prefers-color-scheme:dark){
-  .llogo,.llogo-lg{display:none !important}
-  .rowtitle{font-size:12.5px !important}
-  .price{font-size:13px !important}
-  table tr.row td:nth-child(6),table tr.row td:nth-child(7),table tr.row td:nth-child(8){font-size:13px !important}
+  :root:not(.cw-light) .llogo,:root:not(.cw-light) .llogo-lg{display:none !important}
+  :root:not(.cw-light) .rowtitle{font-size:12.5px !important}
+  :root:not(.cw-light) .price{font-size:13px !important}
+  :root:not(.cw-light) table tr.row td:nth-child(6),:root:not(.cw-light) table tr.row td:nth-child(7),:root:not(.cw-light) table tr.row td:nth-child(8){font-size:13px !important}
 }
+:root.cw-dark .llogo,:root.cw-dark .llogo-lg{display:none !important}
+:root.cw-dark .rowtitle{font-size:12.5px !important}
+:root.cw-dark .price{font-size:13px !important}
+:root.cw-dark table tr.row td:nth-child(6),:root.cw-dark table tr.row td:nth-child(7),:root.cw-dark table tr.row td:nth-child(8){font-size:13px !important}
 </style>
 </head>
 <body>
@@ -395,6 +414,7 @@ tr.detail>td{background:var(--bg);padding:18px;border-left:5px solid var(--lc,#8
     <button class="icobtn" id="import-btn" title="Importar datos desde un archivo exportado antes">⬆</button>
     <input type="file" id="import-input" accept="application/json" hidden>
     <button class="icobtn" id="info-btn" title="Reglas e instrucciones del sistema">ℹ</button>
+    <button class="icobtn" id="theme-btn" type="button" title="Tema: automático (según el sistema)">🌓</button>
     <div class="cur" role="group" aria-label="Moneda"><button data-c="USD" aria-pressed="true">USD $</button><button data-c="EUR" aria-pressed="false">EUR €</button></div>
   </div>
 </div></header>
@@ -1535,6 +1555,21 @@ try{const v=localStorage.getItem("cw-cur");if(v==="EUR"){document.querySelector(
 let stealthOn=lsGet("cw-stealth",false);
 document.documentElement.classList.toggle("stealth",stealthOn);
 $("stealth-toggle").onclick=()=>{stealthOn=!stealthOn;lsSet("cw-stealth",stealthOn);document.documentElement.classList.toggle("stealth",stealthOn)};
+(function(){
+  const THEMES=["auto","dark","light"];
+  const LABEL={auto:"Tema: automático (según el sistema)",dark:"Tema: oscuro",light:"Tema: claro"};
+  const ICON={auto:"🌓",dark:"🌙",light:"☀️"};
+  let theme=lsGet("cw-theme","auto");
+  if(!THEMES.includes(theme))theme="auto";
+  function applyTheme(){
+    document.documentElement.classList.toggle("cw-dark",theme==="dark");
+    document.documentElement.classList.toggle("cw-light",theme==="light");
+    const b=$("theme-btn");if(b){b.textContent=ICON[theme];b.title=LABEL[theme]}
+  }
+  applyTheme();
+  const btn=$("theme-btn");
+  if(btn)btn.onclick=()=>{const i=THEMES.indexOf(theme);theme=THEMES[(i+1)%THEMES.length];lsSet("cw-theme",theme);applyTheme()};
+})();
 $("export-btn").onclick=()=>{const data={_app:"cruise-planner-backup",_v:1,mycruises:lsGet("cw-mycruises",[]),people:lsGet("cw-people",[]),categories:lsGet("cw-categories",DEFAULT_CATS),saved:lsGet("cw-saved",[])};
 const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
 const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;
