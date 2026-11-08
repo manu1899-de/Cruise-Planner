@@ -1524,6 +1524,17 @@ $("modal-back").hidden=false;$("info-close").onclick=closeModal};
 $("modal-back").addEventListener("click",e=>{if(e.target.id==="modal-back")closeModal()});
 
 /* ---------------- captura de crucero (copiar imagen al portapapeles) ---------------- */
+/* los logos de navieras y los mapas de ruta vienen de un CDN que no manda cabeceras CORS, así que
+   html2canvas no puede leer esos píxeles y los deja en blanco; los reescribimos a través de un proxy
+   de imágenes que sí manda CORS (flagcdn.com, usado para las banderas, ya las manda y se deja igual). */
+function shotProxyUrl(src){
+  try{
+    const u=new URL(src,location.href);
+    if(u.protocol==="data:")return src;
+    if(u.hostname==="flagcdn.com")return src;
+    return "https://images.weserv.nl/?url="+encodeURIComponent(u.hostname+u.pathname+u.search)
+  }catch(e){return src}
+}
 document.addEventListener("click",async e=>{
   const btn=e.target.closest("[data-shot]");if(!btn)return;
   e.stopPropagation();
@@ -1533,7 +1544,9 @@ document.addEventListener("click",async e=>{
   const orig=btn.textContent;btn.textContent="Generando…";btn.disabled=true;
   try{
     const bg=getComputedStyle(document.body).backgroundColor;
-    const canvas=await html2canvas(el,{backgroundColor:bg,scale:2,useCORS:true});
+    const canvas=await html2canvas(el,{backgroundColor:bg,scale:2,useCORS:true,imageTimeout:8000,onclone:doc=>{
+      doc.querySelectorAll("img").forEach(img=>{if(!img.src)return;img.crossOrigin="anonymous";img.src=shotProxyUrl(img.src)})
+    }});
     canvas.toBlob(async blob=>{
       if(!blob){btn.textContent="✕ Error";setTimeout(()=>{btn.textContent=orig;btn.disabled=false},1800);return}
       try{
