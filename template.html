@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>CRUISE - PLANNER</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Public+Sans:wght@400;500;600;700&family=Roboto+Mono:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Public+Sans:wght@400;500;600;700&display=swap">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
 /* Layout: harbour departure board — navy masthead, coloured line stripes, expandable voyage cards */
@@ -18,7 +18,7 @@
   --sky-soft:#E3EEFB;--sky-ink:#244C8F;
   --f-display:"Bricolage Grotesque",ui-sans-serif,system-ui,sans-serif;
   --f-body:"Public Sans",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
-  --f-mono:"Roboto Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --f-mono:"Public Sans",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
 }
 *{box-sizing:border-box}
 html,body{margin:0}
@@ -380,7 +380,7 @@ tr.detail>td{background:var(--bg);padding:18px;border-left:5px solid var(--lc,#8
 .resumen-grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 @media (max-width:760px){.resumen-grid2{grid-template-columns:1fr}}
 @media (max-width:640px){.mast h1{font-size:26px}.hide-sm{display:none}table.cwlist{min-width:0}.days li{grid-template-columns:38px 1fr}.days li .ds{grid-column:2}.dgrid{grid-template-columns:1fr}.barrow{grid-template-columns:100px 1fr auto}}
-/* El 0 (cero) de JetBrains Mono puede confundirse con un 8 a tamaños chicos; forzamos el cero tachado (0̸) en todos los números del diseño para que se distingan sin ambigüedad. */
+/* Los números usan Public Sans (no una fuente mono con cero tachado/punteado) para que el 0 sea un óvalo liso y no se confunda con el 8; tabular-nums mantiene el ancho de los dígitos alineado como en una fuente monoespaciada. */
 .num,.price,.mi .n,.wd,input[type=number],.dpf-day,.badge-star,.catcard .cnt,.loytier .lp,.tl-date,.tlh-date,.legend-item b,.radar-val{font-variant-numeric:tabular-nums}
 </style>
 </head>
@@ -449,7 +449,6 @@ tr.detail>td{background:var(--bg);padding:18px;border-left:5px solid var(--lc,#8
           <th class="r"><button data-sort="usd">Dos personas</button></th>
           <th class="r"><button data-sort="night">Por noche</button></th>
           <th class="r hide-sm"><button data-sort="chgEur">Cambio</button></th>
-          <th class="r hide-sm"><button data-sort="chgPct">% Cambio</button></th>
           <th class="r hide-sm"><button data-sort="lastUpd" title="Fecha de la última actualización de precio">Act.</button></th>
           <th></th>
         </tr></thead>
@@ -497,7 +496,6 @@ tr.detail>td{background:var(--bg);padding:18px;border-left:5px solid var(--lc,#8
             <th class="r"><button data-sort="usd" data-tbl="cat">Dos personas</button></th>
             <th class="r"><button data-sort="night" data-tbl="cat">Por noche</button></th>
             <th class="r hide-sm"><button data-sort="chgEur" data-tbl="cat">Cambio</button></th>
-            <th class="r hide-sm"><button data-sort="chgPct" data-tbl="cat">% Cambio</button></th>
             <th class="r hide-sm"><button data-sort="lastUpd" data-tbl="cat" title="Fecha de la última actualización de precio">Act.</button></th>
             <th></th>
           </tr></thead>
@@ -1024,7 +1022,6 @@ return`<tr class="row" style="--lc:${L[1]}" data-rowid="${esc(c.id)}"><td><butto
 <td class="r"><span class="num">${M(p.usd!=null?p.usd*2:null,p.eur!=null?p.eur*2:null)}</span></td>
 <td class="r num">${M(p.usd!=null?p.usd/c.nights:null,p.eur!=null?p.eur/c.nights:null)}</td>
 <td class="r hide-sm" style="font-size:12px;white-space:nowrap">${chgEurCell(c)}</td>
-<td class="r hide-sm" style="font-size:12px;white-space:nowrap">${chgPctCell(c)}</td>
 <td class="r hide-sm" style="font-size:12px;white-space:nowrap">${lastUpdCell(c)}</td>
 <td></td></tr>${o?detail(c):""}`}
 function wireRowEvents(tbody,onAfter){tbody.querySelectorAll("tr.row").forEach(tr=>tr.onclick=e=>{if(e.target.closest("[data-flag]")||e.target.closest("a.book"))return;const id=tr.dataset.rowid;S.open.has(id)?S.open.delete(id):S.open.add(id);onAfter()});
