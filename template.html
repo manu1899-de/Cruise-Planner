@@ -421,7 +421,7 @@ tr.detail>td{background:var(--bg);padding:18px;border-left:5px solid var(--lc,#8
         <div class="fld msdd" id="f-to-wrap">Zarpa hasta<button type="button" class="msdd-btn" id="f-to-btn">Cualquiera</button><div class="dpf-panel" id="f-to-panel" hidden></div></div>
         <label class="fld check"><input id="f-we" type="checkbox">Salida en fin de semana o festivo</label>
         <label class="fld check"><input id="f-hasprice" type="checkbox" checked>Ocultar cruceros sin precio</label>
-        <label class="fld">Cambio hoy<select id="f-chg"><option value="">Todos</option><option value="down">Bajó</option><option value="up">Subió</option><option value="flat">Sin cambio</option></select></label>
+        <label class="fld">Cambio<select id="f-chg"><option value="">Todos</option><option value="down">Bajó</option><option value="up">Subió</option><option value="flat">Sin cambio</option></select></label>
         <button class="btn ghost" id="f-reset">Limpiar</button>
       </div>
       <details class="catf-group" id="f-more-wrap">
@@ -438,7 +438,9 @@ tr.detail>td{background:var(--bg);padding:18px;border-left:5px solid var(--lc,#8
           <th class="r"><button data-sort="usd">Por persona</button></th>
           <th class="r"><button data-sort="usd">Dos personas</button></th>
           <th class="r"><button data-sort="night">Por noche</button></th>
-          <th class="r hide-sm"><button data-sort="chg">Cambio</button></th>
+          <th class="r hide-sm"><button data-sort="chgEur">Cambio (€)</button></th>
+          <th class="r hide-sm"><button data-sort="chgPct">% Cambio</button></th>
+          <th class="r hide-sm"><button data-sort="lastUpd">Últ. actualización</button></th>
           <th></th>
         </tr></thead>
         <tbody id="rows"></tbody>
@@ -471,7 +473,7 @@ tr.detail>td{background:var(--bg);padding:18px;border-left:5px solid var(--lc,#8
           <div class="fld msdd" id="cd-to-wrap">Zarpa hasta<button type="button" class="msdd-btn" id="cd-to-btn">Cualquiera</button><div class="dpf-panel" id="cd-to-panel" hidden></div></div>
           <label class="fld check"><input id="cd-we" type="checkbox">Salida en fin de semana o festivo</label>
           <label class="fld check"><input id="cd-hasprice" type="checkbox" checked>Ocultar cruceros sin precio</label>
-          <label class="fld">Cambio hoy<select id="cd-chg"><option value="">Todos</option><option value="down">Bajó</option><option value="up">Subió</option><option value="flat">Sin cambio</option></select></label>
+          <label class="fld">Cambio<select id="cd-chg"><option value="">Todos</option><option value="down">Bajó</option><option value="up">Subió</option><option value="flat">Sin cambio</option></select></label>
           <button class="btn ghost" id="cd-reset">Limpiar</button>
         </div>
         <div class="tbl-wrap"><table>
@@ -484,7 +486,9 @@ tr.detail>td{background:var(--bg);padding:18px;border-left:5px solid var(--lc,#8
             <th class="r"><button data-sort="usd" data-tbl="cat">Por persona</button></th>
             <th class="r"><button data-sort="usd" data-tbl="cat">Dos personas</button></th>
             <th class="r"><button data-sort="night" data-tbl="cat">Por noche</button></th>
-            <th class="r hide-sm"><button data-sort="chg" data-tbl="cat">Cambio</button></th>
+            <th class="r hide-sm"><button data-sort="chgEur" data-tbl="cat">Cambio (€)</button></th>
+            <th class="r hide-sm"><button data-sort="chgPct" data-tbl="cat">% Cambio</button></th>
+            <th class="r hide-sm"><button data-sort="lastUpd" data-tbl="cat">Últ. actualización</button></th>
             <th></th>
           </tr></thead>
           <tbody id="catrows"></tbody>
@@ -927,7 +931,7 @@ function baseList(){return S.subBuscar==="guardados"?D.cruises.filter(isFlag):D.
 let refreshFLineUI=null;
 function lineOptions(){const ls=[...new Set(D.cruises.map(c=>c.line))].filter(Boolean).sort();
 refreshFLineUI=wireMultiSelectDropdown("f-line",{get sel(){return S.lines},set sel(v){S.lines=v}},ls,()=>{S.page=0;renderRows()})}
-function sortList(list,sort){return list.slice().sort((a,b)=>{const k=sort.k,d=sort.dir,v=x=>k==="ship"?x.line+x.ship:k==="dep"?x.dep.date:k==="arr"?x.arr.date:k==="nights"?x.nights:k==="usd"?last(x).usd??1e9:k==="chg"?changeAmt(x)??1e9:(last(x).usd??1e9)/x.nights;const A=v(a),B=v(b);return(A>B?1:A<B?-1:0)*d})}
+function sortList(list,sort){return list.slice().sort((a,b)=>{const k=sort.k,d=sort.dir,v=x=>k==="ship"?x.line+x.ship:k==="dep"?x.dep.date:k==="arr"?x.arr.date:k==="nights"?x.nights:k==="usd"?last(x).usd??1e9:k==="chgEur"?changeEur(x)??1e9:k==="chgPct"?changePct(x)??1e9:k==="lastUpd"?(lastUpdateDate(x)||""):(last(x).usd??1e9)/x.nights;const A=v(a),B=v(b);return(A>B?1:A<B?-1:0)*d})}
 function matchChgFilter(c,f){if(!f)return true;const d=changeAmt(c);if(f==="down")return d<0;if(f==="up")return d>0;if(f==="flat")return d===0;return true}
 function filtered(){const q=$("f-q").value.trim().toLowerCase(),nmin=+$("f-nmin").value||0,nmax=+$("f-nmax").value||0,pmax=+$("f-pmax").value||0,from=S.from,to=S.to,we=$("f-we").checked,hasPriceOnly=$("f-hasprice").checked,chgf=$("f-chg").value;
 return sortList(baseList().filter(c=>{const p=last(c);
@@ -939,15 +943,15 @@ if(!matchChgFilter(c,chgf))return false;
 if(!matchLocRole(c,S.depLoc,"dep"))return false;if(!matchLocRole(c,S.arrLoc,"arr"))return false;if(!matchLocRole(c,S.stopLoc,"stop"))return false;
 if(q){const hay=[c.ship,c.line,c.title,c.dep.port,c.arr.port,...(c.ports||[]),...countries(c)].join(" ").toLowerCase();if(!hay.includes(q))return false}
 return true}),S.sort)}
-/* "Cambio" = variación de precio registrada en la corrida de hoy (D.settings.lastRun) frente a la revisión anterior.
-   Si el crucero no se re-chequeó hoy (carried over), no cuenta como cambio: devuelve null. */
-function changeAmt(c){const h=c.history||[];if(!h.length)return null;const l=h[h.length-1];if(l.date!==D.settings.lastRun)return null;const p=h.length>1?h[h.length-2]:null;if(!p||l.usd==null||p.usd==null)return null;return l.usd-p.usd}
-function delta(c){const h=c.history||[];const l=h[h.length-1];
-if(!l||l.date!==D.settings.lastRun)return'<span class="sub">No rechequeado hoy</span>';
-const p=h.length>1?h[h.length-2]:null;
-if(!p||l.usd==null||p.usd==null)return'<span class="sub">Primera vez</span>';
-const d=l.usd-p.usd;if(!d)return'<span class="sub">Sin cambio hoy</span>';
-return`<span class="num ${d<0?"down":"up"}">${d<0?"▼":"▲"} ${M(Math.abs(d),S.cur==="EUR"&&l.eur!=null&&p.eur!=null?Math.abs(l.eur-p.eur):null)}<br>${nf.format(d/p.usd*100)} %</span>`}
+/* "Cambio" = variación de precio entre la última revisión registrada y la anterior (sin importar qué día fue cada una;
+   para eso está la columna "Últ. actualización"). changeAmt() da el signo en USD (sirve para el filtro subió/bajó). */
+function changeAmt(c){const h=c.history||[];const l=h[h.length-1];const p=h.length>1?h[h.length-2]:null;if(!l||!p||l.usd==null||p.usd==null)return null;return l.usd-p.usd}
+function changeEur(c){const h=c.history||[];const l=h[h.length-1];const p=h.length>1?h[h.length-2]:null;if(!l||!p||l.usd==null||p.usd==null)return null;if(l.eur!=null&&p.eur!=null)return l.eur-p.eur;return(l.usd-p.usd)/fx()}
+function changePct(c){const h=c.history||[];const l=h[h.length-1];const p=h.length>1?h[h.length-2]:null;if(!l||!p||l.usd==null||p.usd==null||!p.usd)return null;return(l.usd-p.usd)/p.usd*100}
+function lastUpdateDate(c){const h=c.history||[];return h.length?h[h.length-1].date:null}
+function chgEurCell(c){const d=changeEur(c);if(d==null)return'<span class="sub">Primera vez</span>';if(!d)return'<span class="sub">Sin cambio</span>';return`<span class="num ${d<0?"down":"up"}">${d<0?"▼":"▲"} ${nf.format(Math.abs(d))} €</span>`}
+function chgPctCell(c){const d=changeAmt(c),pct=changePct(c);if(pct==null)return'<span class="sub">Primera vez</span>';if(!d)return'<span class="sub">Sin cambio</span>';return`<span class="num ${d<0?"down":"up"}">${nf.format(pct)} %</span>`}
+function lastUpdCell(c){const d=lastUpdateDate(c);if(!d)return'<span class="sub">—</span>';const isToday=d===D.settings.lastRun;return`<span class="num"${isToday?' style="font-weight:700"':""}>${d.split("-").reverse().join(".")}${isToday?' <span class="sub">(hoy)</span>':""}</span>`}
 function pills(c){let h=categoriesForCruise(c).map(n=>`<span class="pill p-cat">${esc(n)}</span>`).join("");
 if(isFlag(c))h+='<span class="pill p-flag">Guardado</span>';if(c.priceFrom)h+='<span class="pill p-warn">Precio desde</span>';return h}
 function days(c){const f=x=>x?x.slice(0,5):"";
@@ -963,7 +967,7 @@ const chgTd=d==null?'<span class="sub">—</span>':d===0?'<span class="sub">Sin 
 const pctTd=pct==null||d===0?'<span class="sub">—</span>':`<span class="num ${d<0?"down":"up"}">${nf.format(pct)} %</span>`;
 return`<tr><td class="num">${h.date.split("-").reverse().join(".")}</td><td class="r num">${M(h.usd,h.eur)}</td><td class="r num">${M(h.usd!=null?h.usd*2:null,h.eur!=null?h.eur*2:null)}</td><td class="r">${chgTd}</td><td class="r">${pctTd}</td></tr>`}).reverse().join("");
 const sr=shipRating(c.ship);
-return`<tr class="detail" style="--lc:${L[1]}"><td colspan="10"><div class="dgrid-wrap" id="dgrid-wrap-${esc(c.id)}"><button class="btn ghost shot-btn" type="button" data-shot="${esc(c.id)}" title="Copiar una captura de este crucero al portapapeles">📋 Copiar imagen</button><div class="dgrid" id="dgrid-${esc(c.id)}">
+return`<tr class="detail" style="--lc:${L[1]}"><td colspan="12"><div class="dgrid-wrap" id="dgrid-wrap-${esc(c.id)}"><button class="btn ghost shot-btn" type="button" data-shot="${esc(c.id)}" title="Copiar una captura de este crucero al portapapeles">📋 Copiar imagen</button><div class="dgrid" id="dgrid-${esc(c.id)}">
 <div><h3>Ruta</h3>${c.map?`<div class="map" id="map-${esc(c.id)}"><img src="${esc(c.map)}" alt="Mapa de la ruta" loading="lazy" onerror="mapFallback('${esc(c.id)}')"><div class="cap">Mapa: iCruise</div></div>`:routeMap(c)}
 <h3 style="margin-top:14px">Países</h3><div class="ctrygrp">${cg.length?cg.map(g=>`<div class="g"><span class="flagc">${flagTag(g.country)}</span><div><div class="cname">${esc(g.country)}</div><div class="clist">${g.cities.map(esc).join(" · ")}</div></div></div>`).join(""):'<span class="sub">Sin dato</span>'}</div></div>
 <div><h3>Día a día · ${esc(c.title||"")}<span class="bizdays">${bd} días hábiles de ${c.nights+1}</span></h3>${days(c)}</div>
@@ -981,7 +985,9 @@ return`<tr class="row" style="--lc:${L[1]}" data-rowid="${esc(c.id)}"><td><butto
 <td class="r"><span class="price">${M(p.usd,p.eur)}</span></td>
 <td class="r"><span class="num">${M(p.usd!=null?p.usd*2:null,p.eur!=null?p.eur*2:null)}</span></td>
 <td class="r num">${M(p.usd!=null?p.usd/c.nights:null,p.eur!=null?p.eur/c.nights:null)}</td>
-<td class="r hide-sm" style="font-size:12px">${delta(c)}</td>
+<td class="r hide-sm" style="font-size:12px">${chgEurCell(c)}</td>
+<td class="r hide-sm" style="font-size:12px">${chgPctCell(c)}</td>
+<td class="r hide-sm" style="font-size:12px">${lastUpdCell(c)}</td>
 <td style="white-space:nowrap"><a class="btn book" href="${esc(c.url)}" target="_blank" rel="noopener" title="Reservar en iCruise">Reservar</a> <span class="exp" aria-hidden="true">${o?"▾":"▸"}</span></td></tr>${o?detail(c):""}`}
 function wireRowEvents(tbody,onAfter){tbody.querySelectorAll("tr.row").forEach(tr=>tr.onclick=e=>{if(e.target.closest("[data-flag]")||e.target.closest("a.book"))return;const id=tr.dataset.rowid;S.open.has(id)?S.open.delete(id):S.open.add(id);onAfter()});
 tbody.querySelectorAll("[data-flag]").forEach(b=>b.onclick=e=>{e.stopPropagation();toggleSaved(b.dataset.flag);onAfter()})}
@@ -989,7 +995,7 @@ function renderRows(){const list=filtered(),PS=100,pages=Math.max(1,Math.ceil(li
 $("count").textContent=`${list.length.toLocaleString("de-DE")} cruceros`;
 $("pager").innerHTML=pages>1?`<button class="btn" id="pp"${S.page?"":" disabled"}>‹ Anterior</button><span class="num">${S.page+1} / ${pages}</span><button class="btn" id="pn"${S.page<pages-1?"":" disabled"}>Siguiente ›</button>`:"";
 if(pages>1){$("pp").onclick=()=>{S.page--;renderRows();scrollTo(0,0)};$("pn").onclick=()=>{S.page++;renderRows();scrollTo(0,0)}}
-if(!list.length){$("rows").innerHTML=`<tr><td colspan="10" class="empty">${S.subBuscar==="guardados"?"Todavía no has guardado ningún crucero. Pulsa la ⚑ en una fila para guardarlo.":"Ningún crucero cumple estos filtros."}</td></tr>`;return}
+if(!list.length){$("rows").innerHTML=`<tr><td colspan="12" class="empty">${S.subBuscar==="guardados"?"Todavía no has guardado ningún crucero. Pulsa la ⚑ en una fila para guardarlo.":"Ningún crucero cumple estos filtros."}</td></tr>`;return}
 $("rows").innerHTML=shown.map(rowHTML).join("");
 wireRowEvents($("rows"),renderRows)}
 function banner(t){$("banner").textContent=t;$("banner").hidden=!t}
@@ -1032,7 +1038,7 @@ const list=sortList(catDetailFiltered(cat),CS.sort),PS=100,pages=Math.max(1,Math
 $("catcount").textContent=`${list.length.toLocaleString("de-DE")} cruceros en esta categoría`;
 $("catpager").innerHTML=pages>1?`<button class="btn" id="catpp"${CS.page?"":" disabled"}>‹ Anterior</button><span class="num">${CS.page+1} / ${pages}</span><button class="btn" id="catpn"${CS.page<pages-1?"":" disabled"}>Siguiente ›</button>`:"";
 if(pages>1){$("catpp").onclick=()=>{CS.page--;renderCatRows();scrollTo(0,0)};$("catpn").onclick=()=>{CS.page++;renderCatRows();scrollTo(0,0)}}
-$("catrows").innerHTML=shown.length?shown.map(rowHTML).join(""):'<tr><td colspan="10" class="empty">Ningún crucero cumple los filtros de esta categoría. Edítala para ampliarlos.</td></tr>';
+$("catrows").innerHTML=shown.length?shown.map(rowHTML).join(""):'<tr><td colspan="12" class="empty">Ningún crucero cumple los filtros de esta categoría. Edítala para ampliarlos.</td></tr>';
 wireRowEvents($("catrows"),renderCatRows)}
 $("cat-detail-back").onclick=closeCatDetail;
 document.querySelectorAll('[data-tbl="cat"]').forEach(b=>b.onclick=()=>{const k=b.dataset.sort;CS.sort=CS.sort.k===k?{k,dir:-CS.sort.dir}:{k,dir:1};renderCatRows()});
