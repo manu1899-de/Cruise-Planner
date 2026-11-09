@@ -7,3 +7,6 @@ search_run*.log
 *.log
 Cruise Watch.html
 __pycache__/
+fill_days_state.json
+fill_days_log.txt
+raw_days_cache/

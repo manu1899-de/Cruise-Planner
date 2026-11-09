@@ -79,6 +79,40 @@ def load_ship_specs():
     return json.load(open(p)) if os.path.exists(p) else {}
 
 
+def apply_day_details(c, cid_bare, dep_date, cid2gid, details_full):
+    # Aplica el dia a dia (cid2gid.json + details_full.jsonl) a un crucero `c`, corriendo
+    # las fechas del itinerario guardado para que calcen con su fecha de zarpe real. Se usa
+    # tanto para los cruceros recien crawleados hoy como para los que se "cargan" de
+    # cw_data.json sin re-chequear (ver carried-over mas abajo): asi, si fill_days.py agrega
+    # un itinerario nuevo, se aplica aunque el crucero en cuestion no se haya vuelto a
+    # crawlear ese dia.
+    gid = cid2gid.get(cid_bare)
+    det = details_full.get(gid) if gid else None
+    if not det or not det.get("days"):
+        return False
+    src_days = det["days"]
+    offset0 = 0
+    if src_days and src_days[0].get("date"):
+        try:
+            offset0 = (datetime.date.fromisoformat(dep_date) - datetime.date.fromisoformat(src_days[0]["date"])).days
+        except Exception:
+            offset0 = 0
+    new_days = []
+    for d in src_days:
+        nd = dict(d)
+        if d.get("date"):
+            try:
+                nd["date"] = (datetime.date.fromisoformat(d["date"]) + datetime.timedelta(days=offset0)).isoformat()
+            except Exception:
+                pass
+        new_days.append(nd)
+    c["days"] = new_days
+    c["countries"] = det["countries"]
+    if det.get("map"): c["map"] = det["map"]
+    if det.get("title"): c["title"] = det["title"]
+    return True
+
+
 def classify(c):
     cats = []
     u, n = c["usd"], c["nights"]
@@ -165,29 +199,7 @@ def main():
             if specs.get("Tonnage"): c["tonnage"] = specs["Tonnage"] + " GT"
             if specs.get("Passengers (Max Occupancy)"): c["capacity"] = specs["Passengers (Max Occupancy)"]
             n_specs += 1
-        gid = cid2gid.get(r.get("cid"))
-        det = details_full.get(gid) if gid else None
-        if det and det.get("days"):
-            src_days = det["days"]
-            offset0 = 0
-            if src_days and src_days[0].get("date"):
-                try:
-                    offset0 = (datetime.date.fromisoformat(dep_date) - datetime.date.fromisoformat(src_days[0]["date"])).days
-                except Exception:
-                    offset0 = 0
-            new_days = []
-            for d in src_days:
-                nd = dict(d)
-                if d.get("date"):
-                    try:
-                        nd["date"] = (datetime.date.fromisoformat(d["date"]) + datetime.timedelta(days=offset0)).isoformat()
-                    except Exception:
-                        pass
-                new_days.append(nd)
-            c["days"] = new_days
-            c["countries"] = det["countries"]
-            if det.get("map"): c["map"] = det["map"]
-            if det.get("title"): c["title"] = det["title"]
+        if apply_day_details(c, r.get("cid"), dep_date, cid2gid, details_full):
             n_detail += 1
         c["loyalty"] = r["line"] if r["line"] in ("Royal Caribbean", "MSC") else None
         u = r["usd"]
@@ -205,16 +217,25 @@ def main():
     # cual (con su precio/historial de la ultima vez que se chequearon) en vez de perderse.
     seen_ids = {c["id"] for c in cruises}
     carried = 0
+    carried_detail = 0
     for old_id, oc in known_by_id.items():
         if old_id in seen_ids:
             continue
         dep_date_old = (oc.get("dep") or {}).get("date")
         if not dep_date_old or dep_date_old < TODAY:
             continue  # ya zarpo, no tiene sentido seguir mostrandolo
+        if not oc.get("days"):
+            # no se re-chequea el precio hoy, pero si cid2gid.json/details_full.jsonl
+            # ganaron un itinerario nuevo desde la ultima vez (p.ej. via fill_days.py),
+            # lo aplicamos igual -- si no, un crucero sin dias podia quedar asi para
+            # siempre hasta que calzara con volver a crawlearse.
+            cid_bare = (old_id or "").replace("ic-", "")
+            if apply_day_details(oc, cid_bare, dep_date_old, cid2gid, details_full):
+                carried_detail += 1
         cruises.append(oc)
         carried += 1
     print(f"detail matched: {n_detail}/{len(raw)}, specs matched: {n_specs}/{len(raw)}")
-    print(f"carried over sin re-chequear hoy: {carried}")
+    print(f"carried over sin re-chequear hoy: {carried} ({carried_detail} con itinerario nuevo aplicado)")
     st["lastRun"] = TODAY
     st["catalogCount"] = len(cruises) + hidden
     st["catalogStatus"] = os.environ.get("STATUS", "Línea base: primera extracción completa. NEW se calcula a partir de la próxima revisión.")

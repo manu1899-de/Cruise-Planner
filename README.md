@@ -16,6 +16,7 @@ scripts del crawl de icruise.com y el historial acumulado de precios de cada cru
 - `reset_day.sh` — vacía el progreso del crawl de ayer, para que hoy se vuelva a comprobar cada barco.
 - `progress.sh` — imprime "`<listos> <total>`" barcos crawleados hoy, para saber si hace falta otra pasada.
 - `update.sh` — paso final: combina lo que haya en `sailings.jsonl` con el historial anterior y genera `Cruise Watch.html` + `cw_data.json` actualizado.
+- `fill_days.py` — backfill puntual (no corre a diario) para cruceros a los que les falta el día a día (`c["days"]` vacío) porque iCruise bloqueó su página de itinerario la única vez que se scrapeó. Agrupa los cruceros afectados por (barco, noches, paradas) y baja una sola página de ejemplo por grupo, así que cubre muchos cruceros con pocas peticiones. `python3 -I fill_days.py fetch` baja las páginas a `raw_days_cache/` (no se versiona); `python3 -I fill_days.py build` las parsea y agrega las entradas nuevas a `cid2gid.json`/`details_full.jsonl`. Correr de nuevo si `gen.py` reporta muchos cruceros sin `days`. Un puñado de URLs de itinerario no existen en iCruise (redirigen al mapa del sitio) y quedan sin poder llenarse; eso es normal, no un bug.
 
 ## Cómo se usa (lo hace Claude automáticamente)
 
