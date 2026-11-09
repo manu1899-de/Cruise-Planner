@@ -62,7 +62,7 @@ input[type=number]{width:92px;font-family:var(--f-mono)}
 .btn[disabled]{opacity:.45;cursor:default}
 :focus-visible{outline:2px solid var(--sea);outline-offset:2px}
 .tbl-wrap{overflow-x:auto;background:var(--panel);border:1px solid var(--line);border-radius:12px}
-table{border-collapse:collapse;width:100%;font-size:13.5px}
+table{border-collapse:collapse;width:100%;min-width:1180px;font-size:13.5px}
 th{font:700 11px var(--f-body);text-transform:uppercase;letter-spacing:.07em;color:var(--ink-2);text-align:left;padding:10px;border-bottom:2px solid var(--line-2);white-space:nowrap;background:var(--panel)}
 th button{all:unset;cursor:pointer}th button:hover{color:var(--ink)}
 th.r,td.r{text-align:right}
@@ -374,7 +374,7 @@ tr.detail>td{background:var(--bg);padding:18px;border-left:5px solid var(--lc,#8
 .photocap{position:absolute;left:0;right:0;bottom:0;padding:5px 7px 4px;font:700 10px var(--f-body);color:#fff;background:linear-gradient(180deg,transparent,rgba(0,0,0,.78));white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .resumen-grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 @media (max-width:760px){.resumen-grid2{grid-template-columns:1fr}}
-@media (max-width:640px){.mast h1{font-size:26px}.hide-sm{display:none}.days li{grid-template-columns:38px 1fr}.days li .ds{grid-column:2}.dgrid{grid-template-columns:1fr}.barrow{grid-template-columns:100px 1fr auto}}
+@media (max-width:640px){.mast h1{font-size:26px}.hide-sm{display:none}table{min-width:0}.days li{grid-template-columns:38px 1fr}.days li .ds{grid-column:2}.dgrid{grid-template-columns:1fr}.barrow{grid-template-columns:100px 1fr auto}}
 /* El 0 (cero) de JetBrains Mono puede confundirse con un 8 a tamaños chicos; forzamos el cero tachado (0̸) en todos los números del diseño para que se distingan sin ambigüedad. */
 .num,.price,.mi .n,.wd,input[type=number],.dpf-day,.badge-star,.catcard .cnt,.loytier .lp,.tl-date,.tlh-date,.legend-item b,.radar-val{font-variant-numeric:slashed-zero tabular-nums}
 </style>
