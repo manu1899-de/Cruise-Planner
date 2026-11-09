@@ -421,6 +421,7 @@ tr.detail>td{background:var(--bg);padding:18px;border-left:5px solid var(--lc,#8
         <div class="fld msdd" id="f-to-wrap">Zarpa hasta<button type="button" class="msdd-btn" id="f-to-btn">Cualquiera</button><div class="dpf-panel" id="f-to-panel" hidden></div></div>
         <label class="fld check"><input id="f-we" type="checkbox">Salida en fin de semana o festivo</label>
         <label class="fld check"><input id="f-hasprice" type="checkbox" checked>Ocultar cruceros sin precio</label>
+        <label class="fld">Cambio hoy<select id="f-chg"><option value="">Todos</option><option value="down">Bajó</option><option value="up">Subió</option><option value="flat">Sin cambio</option></select></label>
         <button class="btn ghost" id="f-reset">Limpiar</button>
       </div>
       <details class="catf-group" id="f-more-wrap">
@@ -437,7 +438,7 @@ tr.detail>td{background:var(--bg);padding:18px;border-left:5px solid var(--lc,#8
           <th class="r"><button data-sort="usd">Por persona</button></th>
           <th class="r"><button data-sort="usd">Dos personas</button></th>
           <th class="r"><button data-sort="night">Por noche</button></th>
-          <th class="r hide-sm">Cambio</th>
+          <th class="r hide-sm"><button data-sort="chg">Cambio</button></th>
           <th></th>
         </tr></thead>
         <tbody id="rows"></tbody>
@@ -470,6 +471,7 @@ tr.detail>td{background:var(--bg);padding:18px;border-left:5px solid var(--lc,#8
           <div class="fld msdd" id="cd-to-wrap">Zarpa hasta<button type="button" class="msdd-btn" id="cd-to-btn">Cualquiera</button><div class="dpf-panel" id="cd-to-panel" hidden></div></div>
           <label class="fld check"><input id="cd-we" type="checkbox">Salida en fin de semana o festivo</label>
           <label class="fld check"><input id="cd-hasprice" type="checkbox" checked>Ocultar cruceros sin precio</label>
+          <label class="fld">Cambio hoy<select id="cd-chg"><option value="">Todos</option><option value="down">Bajó</option><option value="up">Subió</option><option value="flat">Sin cambio</option></select></label>
           <button class="btn ghost" id="cd-reset">Limpiar</button>
         </div>
         <div class="tbl-wrap"><table>
@@ -482,7 +484,7 @@ tr.detail>td{background:var(--bg);padding:18px;border-left:5px solid var(--lc,#8
             <th class="r"><button data-sort="usd" data-tbl="cat">Por persona</button></th>
             <th class="r"><button data-sort="usd" data-tbl="cat">Dos personas</button></th>
             <th class="r"><button data-sort="night" data-tbl="cat">Por noche</button></th>
-            <th class="r hide-sm">Cambio</th>
+            <th class="r hide-sm"><button data-sort="chg" data-tbl="cat">Cambio</button></th>
             <th></th>
           </tr></thead>
           <tbody id="catrows"></tbody>
@@ -925,17 +927,27 @@ function baseList(){return S.subBuscar==="guardados"?D.cruises.filter(isFlag):D.
 let refreshFLineUI=null;
 function lineOptions(){const ls=[...new Set(D.cruises.map(c=>c.line))].filter(Boolean).sort();
 refreshFLineUI=wireMultiSelectDropdown("f-line",{get sel(){return S.lines},set sel(v){S.lines=v}},ls,()=>{S.page=0;renderRows()})}
-function sortList(list,sort){return list.slice().sort((a,b)=>{const k=sort.k,d=sort.dir,v=x=>k==="ship"?x.line+x.ship:k==="dep"?x.dep.date:k==="arr"?x.arr.date:k==="nights"?x.nights:k==="usd"?last(x).usd??1e9:(last(x).usd??1e9)/x.nights;const A=v(a),B=v(b);return(A>B?1:A<B?-1:0)*d})}
-function filtered(){const q=$("f-q").value.trim().toLowerCase(),nmin=+$("f-nmin").value||0,nmax=+$("f-nmax").value||0,pmax=+$("f-pmax").value||0,from=S.from,to=S.to,we=$("f-we").checked,hasPriceOnly=$("f-hasprice").checked;
+function sortList(list,sort){return list.slice().sort((a,b)=>{const k=sort.k,d=sort.dir,v=x=>k==="ship"?x.line+x.ship:k==="dep"?x.dep.date:k==="arr"?x.arr.date:k==="nights"?x.nights:k==="usd"?last(x).usd??1e9:k==="chg"?changeAmt(x)??1e9:(last(x).usd??1e9)/x.nights;const A=v(a),B=v(b);return(A>B?1:A<B?-1:0)*d})}
+function matchChgFilter(c,f){if(!f)return true;const d=changeAmt(c);if(f==="down")return d<0;if(f==="up")return d>0;if(f==="flat")return d===0;return true}
+function filtered(){const q=$("f-q").value.trim().toLowerCase(),nmin=+$("f-nmin").value||0,nmax=+$("f-nmax").value||0,pmax=+$("f-pmax").value||0,from=S.from,to=S.to,we=$("f-we").checked,hasPriceOnly=$("f-hasprice").checked,chgf=$("f-chg").value;
 return sortList(baseList().filter(c=>{const p=last(c);
 if(hasPriceOnly&&p.usd==null)return false;
 if(S.lines.length&&!S.lines.includes(c.line))return false;if(nmin&&c.nights<nmin)return false;if(nmax&&c.nights>nmax)return false;
 if(pmax&&p.usd!=null&&CV(p.usd)>pmax)return false;if(from&&c.dep.date<from)return false;if(to&&c.dep.date>to)return false;
 if(we){const i=dinfo(c.dep.date);if(!i.we&&!i.hol)return false}
+if(!matchChgFilter(c,chgf))return false;
 if(!matchLocRole(c,S.depLoc,"dep"))return false;if(!matchLocRole(c,S.arrLoc,"arr"))return false;if(!matchLocRole(c,S.stopLoc,"stop"))return false;
 if(q){const hay=[c.ship,c.line,c.title,c.dep.port,c.arr.port,...(c.ports||[]),...countries(c)].join(" ").toLowerCase();if(!hay.includes(q))return false}
 return true}),S.sort)}
-function delta(c){const p=prev(c),l=last(c);if(!p||l.usd==null||p.usd==null)return'<span class="sub">Primera vez</span>';const d=l.usd-p.usd;if(!d)return'<span class="sub">Sin cambio</span>';return`<span class="num ${d<0?"down":"up"}">${d<0?"▼":"▲"} ${M(Math.abs(d),S.cur==="EUR"&&l.eur!=null&&p.eur!=null?Math.abs(l.eur-p.eur):null)}<br>${nf.format(d/p.usd*100)} %</span>`}
+/* "Cambio" = variación de precio registrada en la corrida de hoy (D.settings.lastRun) frente a la revisión anterior.
+   Si el crucero no se re-chequeó hoy (carried over), no cuenta como cambio: devuelve null. */
+function changeAmt(c){const h=c.history||[];if(!h.length)return null;const l=h[h.length-1];if(l.date!==D.settings.lastRun)return null;const p=h.length>1?h[h.length-2]:null;if(!p||l.usd==null||p.usd==null)return null;return l.usd-p.usd}
+function delta(c){const h=c.history||[];const l=h[h.length-1];
+if(!l||l.date!==D.settings.lastRun)return'<span class="sub">No rechequeado hoy</span>';
+const p=h.length>1?h[h.length-2]:null;
+if(!p||l.usd==null||p.usd==null)return'<span class="sub">Primera vez</span>';
+const d=l.usd-p.usd;if(!d)return'<span class="sub">Sin cambio hoy</span>';
+return`<span class="num ${d<0?"down":"up"}">${d<0?"▼":"▲"} ${M(Math.abs(d),S.cur==="EUR"&&l.eur!=null&&p.eur!=null?Math.abs(l.eur-p.eur):null)}<br>${nf.format(d/p.usd*100)} %</span>`}
 function pills(c){let h=categoriesForCruise(c).map(n=>`<span class="pill p-cat">${esc(n)}</span>`).join("");
 if(isFlag(c))h+='<span class="pill p-flag">Guardado</span>';if(c.priceFrom)h+='<span class="pill p-warn">Precio desde</span>';return h}
 function days(c){const f=x=>x?x.slice(0,5):"";
@@ -945,7 +957,11 @@ return`<li class="${di.hol?"hol":di.we?"we":""}"><span class="dn">D${i+1}</span>
 return'<ol class="days">'+(c.ports||[]).map((p,i)=>{const sea=isSeaStop(p);return`<li><span class="dn">·</span><span class="sub">parada ${i+1}</span><span class="ds"><span class="line1">${sea?`<b>${esc(p.replace(/^Cruising /i,"Navegando: "))}</b>`:`<b>${esc(p)}</b>`}<span class="flagr">${portInfo(p,PCTRY[p],sea)}${!sea&&PCTRY[p]?flagTag(PCTRY[p]):""}</span></span></span></li>`}).join("")+'</ol><p class="note">Orden real de las paradas. Las fechas de cada escala y los días de navegación exactos no se han podido descargar todavía (iCruise bloquea esa página).</p>'}
 window.mapFallback=function(id){const c=D.cruises.find(x=>x.id===id);const el=document.getElementById("map-"+id);if(c&&el)el.outerHTML=routeMap(c)};
 function detail(c){const L=lc(c.line),cg=countryCities(c),off=L[2]?`https://www.${L[2]}`:null,bd=businessDays(c);const mn=Math.min(...(c.history||[]).map(h=>h.usd).filter(v=>v!=null));
-const hist=(c.history||[]).slice().reverse().map(h=>`<tr><td class="num">${h.date.split("-").reverse().join(".")}</td><td class="r num">${M(h.usd,h.eur)}</td><td class="r num">${M(h.usd!=null?h.usd*2:null,h.eur!=null?h.eur*2:null)}</td></tr>`).join("");
+const H=c.history||[];
+const hist=H.map((h,i)=>{const pr=i>0?H[i-1]:null;const hasD=!!(pr&&h.usd!=null&&pr.usd!=null);const d=hasD?h.usd-pr.usd:null;const pct=hasD&&pr.usd?d/pr.usd*100:null;
+const chgTd=d==null?'<span class="sub">—</span>':d===0?'<span class="sub">Sin cambio</span>':`<span class="num ${d<0?"down":"up"}">${d<0?"▼":"▲"} ${M(Math.abs(d),S.cur==="EUR"&&h.eur!=null&&pr.eur!=null?Math.abs(h.eur-pr.eur):null)}</span>`;
+const pctTd=pct==null||d===0?'<span class="sub">—</span>':`<span class="num ${d<0?"down":"up"}">${nf.format(pct)} %</span>`;
+return`<tr><td class="num">${h.date.split("-").reverse().join(".")}</td><td class="r num">${M(h.usd,h.eur)}</td><td class="r num">${M(h.usd!=null?h.usd*2:null,h.eur!=null?h.eur*2:null)}</td><td class="r">${chgTd}</td><td class="r">${pctTd}</td></tr>`}).reverse().join("");
 const sr=shipRating(c.ship);
 return`<tr class="detail" style="--lc:${L[1]}"><td colspan="10"><div class="dgrid-wrap" id="dgrid-wrap-${esc(c.id)}"><button class="btn ghost shot-btn" type="button" data-shot="${esc(c.id)}" title="Copiar una captura de este crucero al portapapeles">📋 Copiar imagen</button><div class="dgrid" id="dgrid-${esc(c.id)}">
 <div><h3>Ruta</h3>${c.map?`<div class="map" id="map-${esc(c.id)}"><img src="${esc(c.map)}" alt="Mapa de la ruta" loading="lazy" onerror="mapFallback('${esc(c.id)}')"><div class="cap">Mapa: iCruise</div></div>`:routeMap(c)}
@@ -953,7 +969,7 @@ return`<tr class="detail" style="--lc:${L[1]}"><td colspan="10"><div class="dgri
 <div><h3>Día a día · ${esc(c.title||"")}<span class="bizdays">${bd} días hábiles de ${c.nights+1}</span></h3>${days(c)}</div>
 <div><h3>Barco</h3><dl class="kv"><dt>Naviera</dt><dd class="shiphead">${L[3]?`<img class="llogo" src="${esc(L[3])}" alt="" onerror="this.remove()">`:""}${esc(c.line)}</dd><dt>Barco</dt><dd><b>${esc(c.ship)}</b>${off?` · <a href="${off}" target="_blank" rel="noopener">sitio oficial (${esc(L[2])}) ↗</a>`:""}${sr?` · <span class="shiprating">★ ${sr.toFixed(1)} (tu valoración)</span>`:""}</dd><dt>Construido</dt><dd class="num">${c.built||"—"}</dd><dt>Remodelado</dt><dd class="num">${c.refurb||"—"}</dd>${c.tonnage?`<dt>Tonelaje</dt><dd class="num">${esc(c.tonnage)}</dd>`:""}${c.capacity?`<dt>Pasajeros</dt><dd class="num">${esc(c.capacity)}</dd>`:""}<dt>Cabina</dt><dd>${esc(c.cabin||"—")}</dd></dl>
 ${(c.promos||[]).length?`<p class="note"><b>Promociones:</b> ${c.promos.map(esc).join(" · ")}</p>`:""}
-<h3 style="margin-top:14px">Historial de precio</h3><table class="hist"><thead><tr><th>Revisión</th><th class="r">Por persona</th><th class="r">Dos personas</th></tr></thead><tbody>${hist}</tbody></table>
+<h3 style="margin-top:14px">Historial de precio</h3><table class="hist"><thead><tr><th>Revisión</th><th class="r">Por persona</th><th class="r">Dos personas</th><th class="r">Cambio</th><th class="r">% cambio</th></tr></thead><tbody>${hist}</tbody></table>
 <p class="note">Mínimo registrado: <span class="num">${M(isFinite(mn)?mn:null)}</span></p>
 <p style="margin:12px 0 0"><a class="btn book" href="${esc(c.url)}" target="_blank" rel="noopener">Reservar en iCruise ↗</a></p></div>
 </div></div></td></tr>`}
@@ -989,23 +1005,24 @@ $("cat-grid").querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>{if(!confi
 /* ---- categoría: vista de detalle (misma tabla que TODOS, pero solo los cruceros de la categoría, sin mezclar con los filtros de TODOS) ---- */
 let refreshCDLineUI=null,cdWired=false,refreshCDFrom=null,refreshCDTo=null;
 function catDetailFiltered(cat){
-  const q=$("cd-q").value.trim().toLowerCase(),nmin=+$("cd-nmin").value||0,nmax=+$("cd-nmax").value||0,pmax=+$("cd-pmax").value||0,from=CS.extra.from,to=CS.extra.to,we=$("cd-we").checked,hasPriceOnly=$("cd-hasprice").checked;
+  const q=$("cd-q").value.trim().toLowerCase(),nmin=+$("cd-nmin").value||0,nmax=+$("cd-nmax").value||0,pmax=+$("cd-pmax").value||0,from=CS.extra.from,to=CS.extra.to,we=$("cd-we").checked,hasPriceOnly=$("cd-hasprice").checked,chgf=$("cd-chg").value;
   return D.cruises.filter(c=>{if(!catMatch(c,cat.filter))return false;const p=last(c);
     if(hasPriceOnly&&p.usd==null)return false;
     if(CS.extra.lines.length&&!CS.extra.lines.includes(c.line))return false;
     if(nmin&&c.nights<nmin)return false;if(nmax&&c.nights>nmax)return false;
     if(pmax&&p.usd!=null&&CV(p.usd)>pmax)return false;if(from&&c.dep.date<from)return false;if(to&&c.dep.date>to)return false;
     if(we){const i=dinfo(c.dep.date);if(!i.we&&!i.hol)return false}
+    if(!matchChgFilter(c,chgf))return false;
     if(q){const hay=[c.ship,c.line,c.title,c.dep.port,c.arr.port,...(c.ports||[]),...countries(c)].join(" ").toLowerCase();if(!hay.includes(q))return false}
     return true})
 }
 function wireCatDetailFiltersOnce(){if(cdWired)return;cdWired=true;
   const ls=[...new Set(D.cruises.map(c=>c.line))].filter(Boolean).sort();
   refreshCDLineUI=wireMultiSelectDropdown("cd-line",{get sel(){return CS.extra.lines},set sel(v){CS.extra.lines=v}},ls,()=>{CS.page=0;renderCatRows()});
-  ["cd-q","cd-nmin","cd-nmax","cd-pmax","cd-we","cd-hasprice"].forEach(id=>$(id).addEventListener("input",()=>{CS.page=0;renderCatRows()}));
+  ["cd-q","cd-nmin","cd-nmax","cd-pmax","cd-we","cd-hasprice","cd-chg"].forEach(id=>$(id).addEventListener("input",()=>{CS.page=0;renderCatRows()}));
   refreshCDFrom=wireDateField("cd-from",CS.extra,"from",()=>{CS.page=0;renderCatRows()});
   refreshCDTo=wireDateField("cd-to",CS.extra,"to",()=>{CS.page=0;renderCatRows()},()=>{if(!CS.extra.from)return null;const[y,m]=CS.extra.from.split("-");return{y:+y,m:+m-1}});
-  $("cd-reset").onclick=()=>{["cd-q","cd-nmin","cd-nmax","cd-pmax"].forEach(id=>$(id).value="");$("cd-we").checked=false;$("cd-hasprice").checked=true;CS.extra.lines=[];CS.extra.from="";CS.extra.to="";refreshCDLineUI&&refreshCDLineUI();refreshCDFrom&&refreshCDFrom();refreshCDTo&&refreshCDTo();CS.page=0;renderCatRows()}
+  $("cd-reset").onclick=()=>{["cd-q","cd-nmin","cd-nmax","cd-pmax"].forEach(id=>$(id).value="");$("cd-we").checked=false;$("cd-hasprice").checked=true;$("cd-chg").value="";CS.extra.lines=[];CS.extra.from="";CS.extra.to="";refreshCDLineUI&&refreshCDLineUI();refreshCDFrom&&refreshCDFrom();refreshCDTo&&refreshCDTo();CS.page=0;renderCatRows()}
 }
 function openCatDetail(catId){CS.catId=catId;CS.page=0;$("cat-list-view").hidden=true;$("cat-detail-view").hidden=false;wireCatDetailFiltersOnce();renderCatRows()}
 function closeCatDetail(){CS.catId=null;$("cat-detail-view").hidden=true;$("cat-list-view").hidden=false;renderCategorias()}
@@ -1573,7 +1590,7 @@ document.addEventListener("click",async e=>{
 /* ---------------- misc wiring ---------------- */
 document.querySelectorAll(".cur button").forEach(b=>b.onclick=()=>{S.cur=b.dataset.c;document.querySelectorAll(".cur button").forEach(x=>x.setAttribute("aria-pressed",x===b));$("pmax-l").textContent="Máx. "+(S.cur==="EUR"?"€":"$")+" por persona";try{localStorage.setItem("cw-cur",S.cur)}catch(e){}renderRows()});
 document.querySelectorAll('th [data-sort]:not([data-tbl="cat"])').forEach(b=>b.onclick=()=>{const k=b.dataset.sort;S.sort=S.sort.k===k?{k,dir:-S.sort.dir}:{k,dir:1};renderRows()});
-["f-q","f-nmin","f-nmax","f-pmax","f-we","f-hasprice"].forEach(id=>$(id).addEventListener("input",()=>{S.page=0;renderRows()}));
+["f-q","f-nmin","f-nmax","f-pmax","f-we","f-hasprice","f-chg"].forEach(id=>$(id).addEventListener("input",()=>{S.page=0;renderRows()}));
 let refreshFFrom=null,refreshFTo=null;
 refreshFFrom=wireDateField("f-from",S,"from",()=>{S.page=0;renderRows()});
 refreshFTo=wireDateField("f-to",S,"to",()=>{S.page=0;renderRows()},()=>{if(!S.from)return null;const[y,m]=S.from.split("-");return{y:+y,m:+m-1}});
@@ -1584,7 +1601,7 @@ function renderFMore(){
   wireLocationRole("f-stop",S.stopLoc,()=>{S.page=0;renderRows()})
 }
 renderFMore();
-$("f-reset").onclick=()=>{["f-q","f-nmin","f-nmax","f-pmax"].forEach(id=>$(id).value="");$("f-we").checked=false;$("f-hasprice").checked=true;S.lines=[];S.from="";S.to="";S.depLoc=initLocEmpty();S.arrLoc=initLocEmpty();S.stopLoc=initLocEmpty();renderFMore();refreshFLineUI&&refreshFLineUI();refreshFFrom&&refreshFFrom();refreshFTo&&refreshFTo();S.page=0;renderRows()};
+$("f-reset").onclick=()=>{["f-q","f-nmin","f-nmax","f-pmax"].forEach(id=>$(id).value="");$("f-we").checked=false;$("f-hasprice").checked=true;$("f-chg").value="";S.lines=[];S.from="";S.to="";S.depLoc=initLocEmpty();S.arrLoc=initLocEmpty();S.stopLoc=initLocEmpty();renderFMore();refreshFLineUI&&refreshFLineUI();refreshFFrom&&refreshFFrom();refreshFTo&&refreshFTo();S.page=0;renderRows()};
 try{const v=localStorage.getItem("cw-cur");if(v==="EUR"){document.querySelector('.cur [data-c="EUR"]').click()}}catch(e){}
 let stealthOn=lsGet("cw-stealth",false);
 document.documentElement.classList.toggle("stealth",stealthOn);
