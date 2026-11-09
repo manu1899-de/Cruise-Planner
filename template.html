@@ -62,7 +62,8 @@ input[type=number]{width:92px;font-family:var(--f-mono)}
 .btn[disabled]{opacity:.45;cursor:default}
 :focus-visible{outline:2px solid var(--sea);outline-offset:2px}
 .tbl-wrap{overflow-x:auto;background:var(--panel);border:1px solid var(--line);border-radius:12px}
-table{border-collapse:collapse;width:100%;min-width:1180px;font-size:13.5px}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+table.cwlist{min-width:1180px}
 th{font:700 11px var(--f-body);text-transform:uppercase;letter-spacing:.07em;color:var(--ink-2);text-align:left;padding:10px;border-bottom:2px solid var(--line-2);white-space:nowrap;background:var(--panel)}
 th button{all:unset;cursor:pointer}th button:hover{color:var(--ink)}
 th.r,td.r{text-align:right}
@@ -179,6 +180,8 @@ tr.detail>td{background:var(--bg);padding:18px;border-left:5px solid var(--lc,#8
 .shiprating{font-size:12px;color:var(--sun-ink);font-weight:700;white-space:nowrap}
 .kv{display:grid;grid-template-columns:auto 1fr;gap:5px 12px;font-size:13px;margin:0}.kv dt{color:var(--ink-2)}.kv dd{margin:0}
 .hist{width:100%;font-size:12.5px;margin-top:6px}.hist td,.hist th{padding:5px 6px;white-space:nowrap}
+.histsum{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:4px}
+.histsum .price{font-size:14px}
 .note{font-size:12px;color:var(--ink-2);margin:8px 0 0}
 .empty{padding:34px;text-align:center;color:var(--ink-2)}
 .section{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:12px;border-top:4px solid var(--lc,var(--sea))}
@@ -376,7 +379,7 @@ tr.detail>td{background:var(--bg);padding:18px;border-left:5px solid var(--lc,#8
 .photocap{position:absolute;left:0;right:0;bottom:0;padding:5px 7px 4px;font:700 10px var(--f-body);color:#fff;background:linear-gradient(180deg,transparent,rgba(0,0,0,.78));white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .resumen-grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 @media (max-width:760px){.resumen-grid2{grid-template-columns:1fr}}
-@media (max-width:640px){.mast h1{font-size:26px}.hide-sm{display:none}table{min-width:0}.days li{grid-template-columns:38px 1fr}.days li .ds{grid-column:2}.dgrid{grid-template-columns:1fr}.barrow{grid-template-columns:100px 1fr auto}}
+@media (max-width:640px){.mast h1{font-size:26px}.hide-sm{display:none}table.cwlist{min-width:0}.days li{grid-template-columns:38px 1fr}.days li .ds{grid-column:2}.dgrid{grid-template-columns:1fr}.barrow{grid-template-columns:100px 1fr auto}}
 /* El 0 (cero) de JetBrains Mono puede confundirse con un 8 a tamaños chicos; forzamos el cero tachado (0̸) en todos los números del diseño para que se distingan sin ambigüedad. */
 .num,.price,.mi .n,.wd,input[type=number],.dpf-day,.badge-star,.catcard .cnt,.loytier .lp,.tl-date,.tlh-date,.legend-item b,.radar-val{font-variant-numeric:tabular-nums}
 </style>
@@ -435,7 +438,7 @@ tr.detail>td{background:var(--bg);padding:18px;border-left:5px solid var(--lc,#8
         <summary class="catf-grouph" style="cursor:pointer">Más filtros — continente, país o puerto de salida/llegada/parada</summary>
         <div style="display:flex;flex-direction:column;gap:12px;padding-top:12px" id="f-more-body"></div>
       </details>
-      <div class="tbl-wrap"><table>
+      <div class="tbl-wrap"><table class="cwlist">
         <thead><tr>
           <th></th>
           <th><button data-sort="ship">Naviera · Barco</button></th>
@@ -483,7 +486,7 @@ tr.detail>td{background:var(--bg);padding:18px;border-left:5px solid var(--lc,#8
           <label class="fld">Cambio<select id="cd-chg"><option value="">Todos</option><option value="down">Bajó</option><option value="up">Subió</option><option value="flat">Sin cambio</option></select></label>
           <button class="btn ghost" id="cd-reset">Limpiar</button>
         </div>
-        <div class="tbl-wrap"><table>
+        <div class="tbl-wrap"><table class="cwlist">
           <thead><tr>
             <th></th>
             <th><button data-sort="ship" data-tbl="cat">Naviera · Barco</button></th>
@@ -989,12 +992,19 @@ if(c.days&&c.days.length)return'<ol class="days">'+c.days.map((d,i)=>{const di=d
 return`<li class="${di.hol?"hol":di.we?"we":""}"><span class="dn">D${i+1}</span><span>${wdChip(d.date)}<span class="num">${di.txt}</span></span><span class="ds"><span class="line1">${sea?"<b>AT SEA</b>":`<b>${esc(d.port)}</b>`}${di.hol?` <span class="pill p-flag" style="margin:0">${esc(di.hol)}</span>`:""}<span class="flagr">${portInfo(d.port,d.country,sea)}${!sea&&d.country?flagTag(d.country):""}</span></span>${t?`<span class="t">${t}</span>`:""}</span></li>`}).join("")+"</ol>";
 return'<ol class="days">'+(c.ports||[]).map((p,i)=>{const sea=isSeaStop(p);return`<li><span class="dn">·</span><span class="sub">parada ${i+1}</span><span class="ds"><span class="line1">${sea?`<b>${esc(p.replace(/^Cruising /i,"Navegando: "))}</b>`:`<b>${esc(p)}</b>`}<span class="flagr">${portInfo(p,PCTRY[p],sea)}${!sea&&PCTRY[p]?flagTag(PCTRY[p]):""}</span></span></span></li>`}).join("")+'</ol><p class="note">Orden real de las paradas. Las fechas de cada escala y los días de navegación exactos no se han podido descargar todavía (iCruise bloquea esa página).</p>'}
 window.mapFallback=function(id){const c=D.cruises.find(x=>x.id===id);const el=document.getElementById("map-"+id);if(c&&el)el.outerHTML=routeMap(c)};
-function detail(c){const L=lc(c.line),cg=countryCities(c),off=L[2]?`https://www.${L[2]}`:null,bd=businessDays(c);const mn=Math.min(...(c.history||[]).map(h=>h.usd).filter(v=>v!=null));
-const H=c.history||[];
-const hist=H.map((h,i)=>{const pr=i>0?H[i-1]:null;const hasD=!!(pr&&h.usd!=null&&pr.usd!=null);const d=hasD?h.usd-pr.usd:null;const pct=hasD&&pr.usd?d/pr.usd*100:null;
+function histRowsHTML(c){const H=c.history||[];
+return H.map((h,i)=>{const pr=i>0?H[i-1]:null;const hasD=!!(pr&&h.usd!=null&&pr.usd!=null);const d=hasD?h.usd-pr.usd:null;const pct=hasD&&pr.usd?d/pr.usd*100:null;
 const chgTd=d==null?'<span class="sub">—</span>':d===0?'<span class="sub">Sin cambio</span>':`<span class="num ${d<0?"down":"up"}">${d<0?"▼":"▲"} ${M(Math.abs(d),S.cur==="EUR"&&h.eur!=null&&pr.eur!=null?Math.abs(h.eur-pr.eur):null)}</span>`;
 const pctTd=pct==null||d===0?'<span class="sub">—</span>':`<span class="num ${d<0?"down":"up"}">${nf.format(pct)} %</span>`;
-return`<tr><td class="num">${h.date.split("-").reverse().join(".")}</td><td class="r num">${M(h.usd,h.eur)}</td><td class="r num">${M(h.usd!=null?h.usd*2:null,h.eur!=null?h.eur*2:null)}</td><td class="r">${chgTd}</td><td class="r">${pctTd}</td></tr>`}).reverse().join("");
+return`<tr><td class="num">${h.date.split("-").reverse().join(".")}</td><td class="r num">${M(h.usd,h.eur)}</td><td class="r num">${M(h.usd!=null?h.usd*2:null,h.eur!=null?h.eur*2:null)}</td><td class="r">${chgTd}</td><td class="r">${pctTd}</td></tr>`}).reverse().join("")}
+function openHistModal(id){const c=D.cruises.find(x=>x.id===id);if(!c)return;const H=c.history||[];const mn=Math.min(...H.map(h=>h.usd).filter(v=>v!=null));
+$("modal").innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center"><h2 style="margin:0">Historial de precio · ${esc(c.title||c.ship)}</h2><button class="btn ghost" id="hist-close" type="button">Cerrar ✕</button></div>
+<div class="tbl-wrap" style="border:0"><table class="hist"><thead><tr><th>Revisión</th><th class="r">Por persona</th><th class="r">Dos personas</th><th class="r">Cambio</th><th class="r">% cambio</th></tr></thead><tbody>${histRowsHTML(c)}</tbody></table></div>
+<p class="note">Mínimo registrado: <span class="num">${M(isFinite(mn)?mn:null)}</span></p>`;
+$("modal-back").hidden=false;$("hist-close").onclick=closeModal}
+document.addEventListener("click",e=>{const b=e.target.closest("[data-histid]");if(!b)return;e.stopPropagation();openHistModal(b.dataset.histid)});
+function detail(c){const L=lc(c.line),cg=countryCities(c),off=L[2]?`https://www.${L[2]}`:null,bd=businessDays(c);
+const H=c.history||[],lastH=H.length?H[H.length-1]:null;
 const sr=shipRating(c.ship);
 return`<tr class="detail" style="--lc:${L[1]}"><td colspan="12"><div class="dgrid-wrap" id="dgrid-wrap-${esc(c.id)}"><button class="btn ghost shot-btn" type="button" data-shot="${esc(c.id)}" title="Copiar una captura de este crucero al portapapeles">📋 Copiar imagen</button><div class="dgrid" id="dgrid-${esc(c.id)}">
 <div><h3>Ruta</h3>${c.map?`<div class="map" id="map-${esc(c.id)}"><img src="${esc(c.map)}" alt="Mapa de la ruta" loading="lazy" onerror="mapFallback('${esc(c.id)}')"><div class="cap">Mapa: iCruise</div></div>`:routeMap(c)}
@@ -1002,8 +1012,7 @@ return`<tr class="detail" style="--lc:${L[1]}"><td colspan="12"><div class="dgri
 <div><h3>Día a día · ${esc(c.title||"")}<span class="bizdays">${bd} días hábiles de ${c.nights+1}</span></h3>${days(c)}</div>
 <div><h3>Barco</h3><dl class="kv"><dt>Naviera</dt><dd class="shiphead">${L[3]?`<img class="llogo" src="${esc(L[3])}" alt="" onerror="this.remove()">`:""}${esc(c.line)}</dd><dt>Barco</dt><dd><b>${esc(c.ship)}</b>${off?` · <a href="${off}" target="_blank" rel="noopener">sitio oficial (${esc(L[2])}) ↗</a>`:""}${sr?` · <span class="shiprating">★ ${sr.toFixed(1)} (tu valoración)</span>`:""}</dd><dt>Construido</dt><dd class="num">${c.built||"—"}</dd><dt>Remodelado</dt><dd class="num">${c.refurb||"—"}</dd>${c.tonnage?`<dt>Tonelaje</dt><dd class="num">${esc(c.tonnage)}</dd>`:""}${c.capacity?`<dt>Pasajeros</dt><dd class="num">${esc(c.capacity)}</dd>`:""}<dt>Cabina</dt><dd>${esc(c.cabin||"—")}</dd></dl>
 ${(c.promos||[]).length?`<p class="note"><b>Promociones:</b> ${c.promos.map(esc).join(" · ")}</p>`:""}
-<h3 style="margin-top:14px">Historial de precio</h3><div style="overflow-x:auto"><table class="hist"><thead><tr><th>Revisión</th><th class="r">Por persona</th><th class="r">Dos personas</th><th class="r">Cambio</th><th class="r">% cambio</th></tr></thead><tbody>${hist}</tbody></table></div>
-<p class="note">Mínimo registrado: <span class="num">${M(isFinite(mn)?mn:null)}</span></p>
+<h3 style="margin-top:14px">Historial de precio</h3><div class="histsum"><span class="price">${M(lastH?lastH.usd:null,lastH?lastH.eur:null)}</span><span class="num">${chgEurCell(c)}</span><span class="num">${chgPctCell(c)}</span><span class="sub">${H.length} ${H.length===1?"revisión registrada":"revisiones registradas"}</span>${H.length?`<button type="button" class="btn ghost" data-histid="${esc(c.id)}">Ver historial completo ▸</button>`:""}</div>
 <p style="margin:12px 0 0"><a class="btn book" href="${esc(c.url)}" target="_blank" rel="noopener">Reservar en iCruise ↗</a></p></div>
 </div></div></td></tr>`}
 function rowHTML(c){const L=lc(c.line),p=last(c),o=S.open.has(c.id),cg=countryCities(c),sr=shipRating(c.ship);
