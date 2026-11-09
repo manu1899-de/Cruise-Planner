@@ -69,6 +69,7 @@ th.r,td.r{text-align:right}
 td{padding:10px;border-bottom:1px solid var(--line);vertical-align:top}
 tr.row td:first-child{border-left:5px solid var(--lc,#888)}
 .tbl-wrap table th:last-child,.tbl-wrap table td:last-child{position:sticky;right:0;background:var(--panel);box-shadow:-6px 0 6px -6px rgba(0,0,0,.25)}
+th.hide-sm,td.hide-sm{padding-left:6px;padding-right:6px}
 tr.detail>td:last-child{position:static;box-shadow:none}
 tr.row:hover td{background:color-mix(in srgb,var(--sea-soft) 40%,transparent)}
 tr.row{cursor:pointer}
@@ -442,7 +443,7 @@ tr.detail>td{background:var(--bg);padding:18px;border-left:5px solid var(--lc,#8
           <th class="r"><button data-sort="night">Por noche</button></th>
           <th class="r hide-sm"><button data-sort="chgEur">Cambio</button></th>
           <th class="r hide-sm"><button data-sort="chgPct">% Cambio</button></th>
-          <th class="r hide-sm"><button data-sort="lastUpd">Últ. actualización</button></th>
+          <th class="r hide-sm"><button data-sort="lastUpd" title="Fecha de la última actualización de precio">Act.</button></th>
           <th></th>
         </tr></thead>
         <tbody id="rows"></tbody>
@@ -490,7 +491,7 @@ tr.detail>td{background:var(--bg);padding:18px;border-left:5px solid var(--lc,#8
             <th class="r"><button data-sort="night" data-tbl="cat">Por noche</button></th>
             <th class="r hide-sm"><button data-sort="chgEur" data-tbl="cat">Cambio</button></th>
             <th class="r hide-sm"><button data-sort="chgPct" data-tbl="cat">% Cambio</button></th>
-            <th class="r hide-sm"><button data-sort="lastUpd" data-tbl="cat">Últ. actualización</button></th>
+            <th class="r hide-sm"><button data-sort="lastUpd" data-tbl="cat" title="Fecha de la última actualización de precio">Act.</button></th>
             <th></th>
           </tr></thead>
           <tbody id="catrows"></tbody>
@@ -953,7 +954,7 @@ function changePct(c){const h=c.history||[];const l=h[h.length-1];const p=h.leng
 function lastUpdateDate(c){const h=c.history||[];return h.length?h[h.length-1].date:null}
 function chgEurCell(c){const amt=changeAmt(c);if(amt==null)return'<span class="sub">Primera vez</span>';if(!amt)return'<span class="sub">Sin cambio</span>';return`<span class="num ${amt<0?"down":"up"}">${amt<0?"▼":"▲"} ${M(Math.abs(amt),Math.abs(changeEur(c)))}</span>`}
 function chgPctCell(c){const d=changeAmt(c),pct=changePct(c);if(pct==null)return'<span class="sub">Primera vez</span>';if(!d)return'<span class="sub">Sin cambio</span>';return`<span class="num ${d<0?"down":"up"}">${nf.format(pct)} %</span>`}
-function lastUpdCell(c){const d=lastUpdateDate(c);if(!d)return'<span class="sub">—</span>';const isToday=d===D.settings.lastRun;return`<span class="num"${isToday?' style="font-weight:700"':""}>${d.split("-").reverse().join(".")}${isToday?' <span class="sub">(hoy)</span>':""}</span>`}
+function lastUpdCell(c){const d=lastUpdateDate(c);if(!d)return'<span class="sub">—</span>';if(d===D.settings.lastRun)return'<span class="num" style="font-weight:700;color:var(--sea-ink)">Hoy</span>';return`<span class="num">${d.slice(2).split("-").reverse().join(".")}</span>`}
 function pills(c){let h=categoriesForCruise(c).map(n=>`<span class="pill p-cat">${esc(n)}</span>`).join("");
 if(isFlag(c))h+='<span class="pill p-flag">Guardado</span>';if(c.priceFrom)h+='<span class="pill p-warn">Precio desde</span>';return h}
 function days(c){const f=x=>x?x.slice(0,5):"";
