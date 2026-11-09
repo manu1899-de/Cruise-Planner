@@ -10,3 +10,6 @@ __pycache__/
 fill_days_state.json
 fill_days_log.txt
 raw_days_cache/
+alert_subject.txt
+alert_body.html
+alert_body.txt
