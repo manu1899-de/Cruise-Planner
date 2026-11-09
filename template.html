@@ -133,6 +133,8 @@ tr.detail>td{background:var(--bg);padding:18px;border-left:5px solid var(--lc,#8
 .dpf-day{border:none;background:none;padding:6px 0;border-radius:6px;cursor:pointer;font-size:12px;color:var(--ink);font-family:var(--f-mono)}
 .dpf-day:hover{background:var(--bg)}
 .dpf-day.sel{background:var(--sea);color:#fff;font-weight:700}
+.dpf-day.rangehl{background:var(--sea-soft);color:var(--sea-ink)}
+.dpf-hint{font-size:10.5px;color:var(--ink-2);line-height:1.35}
 .dpf-foot{display:flex;justify-content:space-between;margin-top:8px;gap:6px}
 .dpf-foot .btn{padding:4px 8px;font-size:11.5px}
 .catf-summary{background:var(--sky-soft);color:var(--sky-ink);border-radius:10px;padding:10px 12px;font-size:13px;font-weight:600;line-height:1.5}
@@ -376,7 +378,7 @@ tr.detail>td{background:var(--bg);padding:18px;border-left:5px solid var(--lc,#8
 @media (max-width:760px){.resumen-grid2{grid-template-columns:1fr}}
 @media (max-width:640px){.mast h1{font-size:26px}.hide-sm{display:none}table{min-width:0}.days li{grid-template-columns:38px 1fr}.days li .ds{grid-column:2}.dgrid{grid-template-columns:1fr}.barrow{grid-template-columns:100px 1fr auto}}
 /* El 0 (cero) de JetBrains Mono puede confundirse con un 8 a tamaños chicos; forzamos el cero tachado (0̸) en todos los números del diseño para que se distingan sin ambigüedad. */
-.num,.price,.mi .n,.wd,input[type=number],.dpf-day,.badge-star,.catcard .cnt,.loytier .lp,.tl-date,.tlh-date,.legend-item b,.radar-val{font-variant-numeric:slashed-zero tabular-nums}
+.num,.price,.mi .n,.wd,input[type=number],.dpf-day,.badge-star,.catcard .cnt,.loytier .lp,.tl-date,.tlh-date,.legend-item b,.radar-val{font-variant-numeric:tabular-nums}
 </style>
 </head>
 <body>
@@ -714,8 +716,8 @@ function wireDateRanges(prefix,ranges,onChange){
     <button class="btn ghost" type="button" data-dr-rm="${i}">✕ Quitar</button>
     </div>`).join("")||'<span class="sub">Ningún rango agregado (si no agregas ninguno, no filtra por fecha)</span>';
     ranges.forEach((r,i)=>{
-      wireDateField(`${prefix}-f${i}`,r,"from",()=>onChange&&onChange());
-      wireDateField(`${prefix}-t${i}`,r,"to",()=>onChange&&onChange(),()=>{if(!r.from)return null;const[y,m]=r.from.split("-");return{y:+y,m:+m-1}});
+      const refreshT=wireDateField(`${prefix}-t${i}`,r,"to",()=>onChange&&onChange(),()=>{if(!r.from)return null;const[y,m]=r.from.split("-");return{y:+y,m:+m-1}});
+      wireDateField(`${prefix}-f${i}`,r,"from",()=>onChange&&onChange(),null,{key:"to",refresh:refreshT});
     });
     $(prefix+"-rows").querySelectorAll("[data-dr-rm]").forEach(b=>b.onclick=()=>{ranges.splice(+b.dataset.drRm,1);renderRows();onChange&&onChange()})};
   $(prefix+"-add").onclick=()=>{ranges.push({from:"",to:""});renderRows()};
@@ -777,11 +779,26 @@ const DOW_ES=["lu","ma","mi","ju","vi","sá","do"];
 const MONTH_ES=["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
 function fmtDateDMY(iso){if(!iso)return"";const[y,m,d]=iso.split("-");return`${d}.${m}.${y}`}
 function dateFieldHTML(id,label){return`<div class="fld msdd" id="${id}-wrap">${esc(label)}<button type="button" class="msdd-btn" id="${id}-btn">Cualquiera</button><div class="dpf-panel" id="${id}-panel" hidden></div></div>`}
-/* state: object holding the ISO value under `key`; getHintMonth(): optional fn returning {y,m} (m=0-indexed) to open on when state has no value yet (e.g. the paired "desde" field's month) */
-function wireDateField(id,state,key,onChange,getHintMonth){
+/* state: object holding the ISO value under `key`; getHintMonth(): optional fn returning {y,m} (m=0-indexed) to open on when state has no value yet (e.g. the paired "desde" field's month);
+   rangeTo: optional {key,refresh} of a paired end-date field in the same `state` object — when given, dragging (mousedown+drag+mouseup) across days fills both `state[key]` (start) and `state[rangeTo.key]` (end) in one motion, while a plain click with no drag still sets only `state[key]`, same as before */
+function wireDateField(id,state,key,onChange,getHintMonth,rangeTo){
   const wrap=$(id+"-wrap"),btn=$(id+"-btn"),panel=$(id+"-panel");
   let view=null;
   const refreshBtn=()=>{btn.textContent=state[key]?fmtDateDMY(state[key]):"Cualquiera"};
+  let dragStart=null,dragEnd=null,dragMoved=false;
+  const dayBtns=()=>panel.querySelectorAll("[data-iso]");
+  const clearHL=()=>dayBtns().forEach(b=>b.classList.remove("rangehl"));
+  const applyHL=(a,b)=>{const lo=a<b?a:b,hi=a<b?b:a;dayBtns().forEach(b2=>b2.classList.toggle("rangehl",b2.dataset.iso>=lo&&b2.dataset.iso<=hi))};
+  if(rangeTo)document.addEventListener("mouseup",()=>{
+    if(dragStart===null)return;
+    clearHL();
+    if(dragMoved&&dragEnd&&dragEnd!==dragStart){
+      const lo=dragStart<dragEnd?dragStart:dragEnd,hi=dragStart<dragEnd?dragEnd:dragStart;
+      state[key]=lo;state[rangeTo.key]=hi;refreshBtn();rangeTo.refresh&&rangeTo.refresh()
+    }else{state[key]=dragStart;refreshBtn()}
+    dragStart=null;dragEnd=null;dragMoved=false;
+    renderCalendar();onChange&&onChange()
+  });
   const renderCalendar=()=>{
     const first=new Date(Date.UTC(view.y,view.m,1)),startDow=(first.getUTCDay()+6)%7,daysInMonth=new Date(Date.UTC(view.y,view.m+1,0)).getUTCDate();
     let cells="";for(let i=0;i<startDow;i++)cells+="<span></span>";
@@ -789,9 +806,16 @@ function wireDateField(id,state,key,onChange,getHintMonth){
     panel.innerHTML=`<div class="dpf-head"><span class="dpf-navgrp"><button type="button" class="dpf-nav" data-nav="-12" title="Año anterior">«</button><button type="button" class="dpf-nav" data-nav="-1" title="Mes anterior">‹</button></span><span>${MONTH_ES[view.m]} ${view.y}</span><span class="dpf-navgrp"><button type="button" class="dpf-nav" data-nav="1" title="Mes siguiente">›</button><button type="button" class="dpf-nav" data-nav="12" title="Año siguiente">»</button></span></div>
     <div class="dpf-dow">${DOW_ES.map(d=>`<span>${d}</span>`).join("")}</div>
     <div class="dpf-grid">${cells}</div>
-    <div class="dpf-foot"><button type="button" class="btn ghost" id="${id}-clear">Limpiar</button><button type="button" class="btn ghost" id="${id}-hoy">Hoy</button></div>`;
+    <div class="dpf-foot"><button type="button" class="btn ghost" id="${id}-clear">Limpiar</button><button type="button" class="btn ghost" id="${id}-hoy">Hoy</button></div>${rangeTo?'<div class="dpf-hint sub" style="padding:4px 2px 0">Mantén apretado y arrastra para elegir el rango hasta otra fecha de un tirón.</div>':''}`;
     panel.querySelectorAll("[data-nav]").forEach(b=>b.onclick=e=>{e.stopPropagation();view.m+=+b.dataset.nav;view.y+=Math.floor(view.m/12);view.m=((view.m%12)+12)%12;renderCalendar()});
-    panel.querySelectorAll("[data-iso]").forEach(b=>b.onclick=e=>{e.stopPropagation();state[key]=b.dataset.iso;refreshBtn();renderCalendar();onChange&&onChange()});
+    if(rangeTo){
+      dayBtns().forEach(b=>{
+        b.onmousedown=e=>{e.preventDefault();e.stopPropagation();dragStart=b.dataset.iso;dragEnd=b.dataset.iso;dragMoved=false;applyHL(dragStart,dragEnd)};
+        b.onmouseenter=()=>{if(dragStart!==null){dragEnd=b.dataset.iso;if(dragEnd!==dragStart)dragMoved=true;applyHL(dragStart,dragEnd)}}
+      })
+    }else{
+      dayBtns().forEach(b=>b.onclick=e=>{e.stopPropagation();state[key]=b.dataset.iso;refreshBtn();renderCalendar();onChange&&onChange()})
+    }
     $(id+"-clear").onclick=e=>{e.stopPropagation();state[key]="";refreshBtn();renderCalendar();onChange&&onChange()};
     $(id+"-hoy").onclick=e=>{e.stopPropagation();const t=new Date();view={y:t.getFullYear(),m:t.getMonth()};renderCalendar()}};
   btn.onclick=e=>{e.stopPropagation();const willOpen=panel.hidden;closeAllDropdowns(willOpen?panel:null);
@@ -993,7 +1017,7 @@ return`<tr class="row" style="--lc:${L[1]}" data-rowid="${esc(c.id)}"><td><butto
 <td class="r hide-sm" style="font-size:12px;white-space:nowrap">${chgEurCell(c)}</td>
 <td class="r hide-sm" style="font-size:12px;white-space:nowrap">${chgPctCell(c)}</td>
 <td class="r hide-sm" style="font-size:12px;white-space:nowrap">${lastUpdCell(c)}</td>
-<td style="white-space:nowrap"><a class="btn book" href="${esc(c.url)}" target="_blank" rel="noopener" title="Reservar en iCruise">Reservar</a> <span class="exp" aria-hidden="true">${o?"▾":"▸"}</span></td></tr>${o?detail(c):""}`}
+<td></td></tr>${o?detail(c):""}`}
 function wireRowEvents(tbody,onAfter){tbody.querySelectorAll("tr.row").forEach(tr=>tr.onclick=e=>{if(e.target.closest("[data-flag]")||e.target.closest("a.book"))return;const id=tr.dataset.rowid;S.open.has(id)?S.open.delete(id):S.open.add(id);onAfter()});
 tbody.querySelectorAll("[data-flag]").forEach(b=>b.onclick=e=>{e.stopPropagation();toggleSaved(b.dataset.flag);onAfter()})}
 function renderRows(){const list=filtered(),PS=100,pages=Math.max(1,Math.ceil(list.length/PS));if(S.page>=pages)S.page=pages-1;const shown=list.slice(S.page*PS,S.page*PS+PS);
@@ -1031,8 +1055,8 @@ function wireCatDetailFiltersOnce(){if(cdWired)return;cdWired=true;
   const ls=[...new Set(D.cruises.map(c=>c.line))].filter(Boolean).sort();
   refreshCDLineUI=wireMultiSelectDropdown("cd-line",{get sel(){return CS.extra.lines},set sel(v){CS.extra.lines=v}},ls,()=>{CS.page=0;renderCatRows()});
   ["cd-q","cd-nmin","cd-nmax","cd-pmax","cd-we","cd-hasprice","cd-chg"].forEach(id=>$(id).addEventListener("input",()=>{CS.page=0;renderCatRows()}));
-  refreshCDFrom=wireDateField("cd-from",CS.extra,"from",()=>{CS.page=0;renderCatRows()});
   refreshCDTo=wireDateField("cd-to",CS.extra,"to",()=>{CS.page=0;renderCatRows()},()=>{if(!CS.extra.from)return null;const[y,m]=CS.extra.from.split("-");return{y:+y,m:+m-1}});
+  refreshCDFrom=wireDateField("cd-from",CS.extra,"from",()=>{CS.page=0;renderCatRows()},null,{key:"to",refresh:refreshCDTo});
   $("cd-reset").onclick=()=>{["cd-q","cd-nmin","cd-nmax","cd-pmax"].forEach(id=>$(id).value="");$("cd-we").checked=false;$("cd-hasprice").checked=true;$("cd-chg").value="";CS.extra.lines=[];CS.extra.from="";CS.extra.to="";refreshCDLineUI&&refreshCDLineUI();refreshCDFrom&&refreshCDFrom();refreshCDTo&&refreshCDTo();CS.page=0;renderCatRows()}
 }
 function openCatDetail(catId){CS.catId=catId;CS.page=0;$("cat-list-view").hidden=true;$("cat-detail-view").hidden=false;wireCatDetailFiltersOnce();renderCatRows()}
@@ -1603,8 +1627,8 @@ document.querySelectorAll(".cur button").forEach(b=>b.onclick=()=>{S.cur=b.datas
 document.querySelectorAll('th [data-sort]:not([data-tbl="cat"])').forEach(b=>b.onclick=()=>{const k=b.dataset.sort;S.sort=S.sort.k===k?{k,dir:-S.sort.dir}:{k,dir:1};renderRows()});
 ["f-q","f-nmin","f-nmax","f-pmax","f-we","f-hasprice","f-chg"].forEach(id=>$(id).addEventListener("input",()=>{S.page=0;renderRows()}));
 let refreshFFrom=null,refreshFTo=null;
-refreshFFrom=wireDateField("f-from",S,"from",()=>{S.page=0;renderRows()});
 refreshFTo=wireDateField("f-to",S,"to",()=>{S.page=0;renderRows()},()=>{if(!S.from)return null;const[y,m]=S.from.split("-");return{y:+y,m:+m-1}});
+refreshFFrom=wireDateField("f-from",S,"from",()=>{S.page=0;renderRows()},null,{key:"to",refresh:refreshFTo});
 function renderFMore(){
   $("f-more-body").innerHTML=locationRoleHTML("f-dep","Salida","¿Desde dónde zarpa? Puedes dejarlo en continente, afinar a país, o ser exacto con un puerto.")+locationRoleHTML("f-arr","Llegada","¿A dónde desembarca? Misma lógica que Salida.")+locationRoleHTML("f-stop","Parada (cualquier puerto de la ruta)","Para pedir p. ej. «mínimo 3 países de Sudamérica», elige el continente aquí y pon el mínimo — sin elegir país ni puerto.");
   wireLocationRole("f-dep",S.depLoc,()=>{S.page=0;renderRows()});
