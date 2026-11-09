@@ -207,7 +207,11 @@ def main():
         if c["nights"] < scope.get("minNights", 6) or (u is not None and u >= scope.get("maxPriceUsd", 2000) and not c["nights"] > scope.get("longNights", 18)):
             hidden += 1
             continue
-        c["key"] = f"{c['ship']}|{dep_date}|{'>'.join(c['ports'])}"
+        # Signature used to spot icruise.com publishing a second cid for the same physical
+        # sailing (same ship, same departure day, same length, same arrival) -- usually
+        # because a port call changed and the old listing was never taken down. Deliberately
+        # excludes `ports`, since that's exactly what can differ between the duplicates.
+        c["key"] = f"{c['ship']}|{dep_date}|{c['nights']}|{c['arr']['date']}|{c['arr']['port']}"
         c["cats"] = classify(c)
         c["note"] = ("Promociones: " + "; ".join(r["promos"])) if r["promos"] else ""
         cruises.append(c)
@@ -232,8 +236,37 @@ def main():
             cid_bare = (old_id or "").replace("ic-", "")
             if apply_day_details(oc, cid_bare, dep_date_old, cid2gid, details_full):
                 carried_detail += 1
+        oc["key"] = f"{oc.get('ship')}|{dep_date_old}|{oc.get('nights')}|{(oc.get('arr') or {}).get('date')}|{(oc.get('arr') or {}).get('port')}"
         cruises.append(oc)
         carried += 1
+    # icruise.com occasionally has two live cid's for what is the same physical sailing (same
+    # ship, same departure day, same length, same arrival) -- usually because one port call
+    # changed (e.g. Arrecife -> Puerto del Rosario) and the old listing was never taken down.
+    # Showing both as separate rows is confusing and splits the price history in two, so we
+    # collapse each group onto the one with the longest price history (the most tracking
+    # value), folding in any price points the other copy has that aren't already recorded.
+    by_sig = {}
+    for c in cruises:
+        by_sig.setdefault(c.get("key"), []).append(c)
+    merged_count = 0
+    deduped = []
+    for sig, group in by_sig.items():
+        if not sig or len(group) == 1:
+            deduped.extend(group)
+            continue
+        group.sort(key=lambda c: len(c.get("history") or []), reverse=True)
+        canon = group[0]
+        by_date = {h["date"]: h for h in (canon.get("history") or [])}
+        for other in group[1:]:
+            for h in (other.get("history") or []):
+                by_date.setdefault(h["date"], h)
+        canon["history"] = sorted(by_date.values(), key=lambda h: h["date"])[-120:]
+        canon["firstSeen"] = min([canon.get("firstSeen", TODAY)] + [o.get("firstSeen", TODAY) for o in group[1:]])
+        deduped.append(canon)
+        merged_count += len(group) - 1
+    cruises = deduped
+    if merged_count:
+        print(f"duplicados fusionados (misma nave/fecha/llegada, distinto cid): {merged_count}")
     print(f"detail matched: {n_detail}/{len(raw)}, specs matched: {n_specs}/{len(raw)}")
     print(f"carried over sin re-chequear hoy: {carried} ({carried_detail} con itinerario nuevo aplicado)")
     st["lastRun"] = TODAY
