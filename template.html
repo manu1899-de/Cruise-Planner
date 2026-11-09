@@ -987,9 +987,9 @@ return`<tr class="row" style="--lc:${L[1]}" data-rowid="${esc(c.id)}"><td><butto
 <td class="r"><span class="price">${M(p.usd,p.eur)}</span></td>
 <td class="r"><span class="num">${M(p.usd!=null?p.usd*2:null,p.eur!=null?p.eur*2:null)}</span></td>
 <td class="r num">${M(p.usd!=null?p.usd/c.nights:null,p.eur!=null?p.eur/c.nights:null)}</td>
-<td class="r hide-sm" style="font-size:12px">${chgEurCell(c)}</td>
-<td class="r hide-sm" style="font-size:12px">${chgPctCell(c)}</td>
-<td class="r hide-sm" style="font-size:12px">${lastUpdCell(c)}</td>
+<td class="r hide-sm" style="font-size:12px;white-space:nowrap">${chgEurCell(c)}</td>
+<td class="r hide-sm" style="font-size:12px;white-space:nowrap">${chgPctCell(c)}</td>
+<td class="r hide-sm" style="font-size:12px;white-space:nowrap">${lastUpdCell(c)}</td>
 <td style="white-space:nowrap"><a class="btn book" href="${esc(c.url)}" target="_blank" rel="noopener" title="Reservar en iCruise">Reservar</a> <span class="exp" aria-hidden="true">${o?"▾":"▸"}</span></td></tr>${o?detail(c):""}`}
 function wireRowEvents(tbody,onAfter){tbody.querySelectorAll("tr.row").forEach(tr=>tr.onclick=e=>{if(e.target.closest("[data-flag]")||e.target.closest("a.book"))return;const id=tr.dataset.rowid;S.open.has(id)?S.open.delete(id):S.open.add(id);onAfter()});
 tbody.querySelectorAll("[data-flag]").forEach(b=>b.onclick=e=>{e.stopPropagation();toggleSaved(b.dataset.flag);onAfter()})}
